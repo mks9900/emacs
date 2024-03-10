@@ -481,8 +481,9 @@
 
 
 (with-eval-after-load "tex-mode"
- (add-hook 'tex-mode-hook 'lsp)
- (add-hook 'latex-mode-hook 'lsp))
+  (add-hook 'tex-mode-hook 'lsp)
+  (add-hook 'latex-mode-hook 'lsp)
+  )
 
 ;; Previewing equations inline from LaTeX:
 (use-package math-preview
@@ -602,7 +603,7 @@
     (setq flycheck-flake8rc "/home/johanthor/.config/flake8")
     )
    )
-
+  )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
