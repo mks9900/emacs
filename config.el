@@ -472,7 +472,7 @@
    
    ;; Linux-specific configurations
    ((eq system-type 'gnu/linux)
-    (setq lsp-latex-texlab-executable "/home/johanthor/bin/texlab")
+    (setq lsp-latex-texlab-executable "/home/johanthor/.cargo/bin/texlab")
     )
    )
 
@@ -551,6 +551,13 @@
                             company-capf          ; Completion-at-point functions (e.g., LSP)
                             company-yasnippet)))  ; Snippet completion
   )
+
+
+;; Optional: Company AUCTeX integrates Company with AUCTeX
+(use-package company-auctex
+  :ensure t
+  :after (company auctex)
+  :config (company-auctex-init))
 
 
 ;; Fuzzy completion of filenames etc.:
