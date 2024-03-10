@@ -125,9 +125,16 @@
   (defvar xdg-config (getenv "XDG_CONFIG_HOME")
     "The XDG config base directory.")
 
-  ;; Starting position and size of window:
-  (set-frame-size (selected-frame) 200 100)
-  (set-frame-position (selected-frame) 650 0)
+  ;; Different window-sizes for different Linux-computers:
+  (cond
+   ((string-equal system-name "macbook-linux")
+    (add-to-list 'default-frame-alist '(fullscreen . maximized))
+    )
+   ((string-equal system-name "rocky-ws")
+    (set-frame-size (selected-frame) 200 100)
+    (set-frame-position (selected-frame) 650 0)
+    )
+   )
   ;; (defvar xdg-data (getenv "XDG_DATA_HOME")
   ;;   "The XDG data base directory.")
   
@@ -136,7 +143,8 @@
 
   ;; Example: Set the font
   ;; (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)))
-))
+  )
+ )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
