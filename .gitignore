@@ -1,7 +1,5 @@
-<<<<<<< HEAD
 .DS_Store
 .idea
-=======
 .cache
 .lsp-session-v1
 .recentf
@@ -19,4 +17,15 @@ snippets
 straight/
 tramp
 transient
->>>>>>> fd74fea (first commit)
+# Compiled
+*.elc
+
+# Packaging
+.cask
+
+# Backup files
+*~
+
+# Undo-tree save-files
+*.~undo-tree
+
