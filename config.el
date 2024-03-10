@@ -103,7 +103,10 @@
   ;; macOS keybinding-fixes:
   (setq mac-right-option-modifier 'nil)
   (setq mac-command-modifier 'control
-        select-enable-clipboard t))
+        select-enable-clipboard t)
+  ;; Starting position and size of window:
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+  )
 
  ;; Linux-specific configurations
  ((eq system-type 'gnu/linux)
@@ -114,6 +117,10 @@
     "The XDG cache base directory.")
   (defvar xdg-config (getenv "XDG_CONFIG_HOME")
     "The XDG config base directory.")
+
+  ;; Starting position and size of window:
+  (set-frame-size (selected-frame) 200 100)
+  (set-frame-position (selected-frame) 650 0)
   ;; (defvar xdg-data (getenv "XDG_DATA_HOME")
   ;;   "The XDG data base directory.")
   
@@ -129,6 +136,15 @@
 ;; Look and feel:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(custom-set-variables
+ '(blink-cursor-mode nil)
+ '(menu-bar-mode nil)
+ '(scroll-bar-mode nil)
+ '(tool-bar-mode nil)
+ '(tooltip-mode nil)
+ '(warning-suppress-types '((use-package))))
+
+
 ;; Show filename in title:
 (setq frame-title-format
       (list (format "%s %%S: %%j " (system-name))
@@ -142,12 +158,6 @@
 ;; Make commented text stand out better:
 (custom-set-faces
  '(font-lock-comment-face ((t (:foreground "gray50")))))
-
-
-;; Starting position and size of window:
-;; (add-to-list 'default-frame-alist '(fullscreen . maximized))
-(set-frame-size (selected-frame) 120 70)
-(set-frame-position (selected-frame) 1100 140)
 
 
 ;; Mouse scroll speed:
