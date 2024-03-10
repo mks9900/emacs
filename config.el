@@ -345,7 +345,7 @@
   :ensure t)
 
 
-;; markdown code formatting
+;; Markdown code formatting
 (use-package prettier-js
   :ensure t
   :hook (markdown-mode . prettier-js-mode))
