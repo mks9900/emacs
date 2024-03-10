@@ -1,0 +1,22 @@
+<<<<<<< HEAD
+.DS_Store
+.idea
+=======
+.cache
+.lsp-session-v1
+.recentf
+ac-comphist.dat
+auto-save-list/
+company-statistics-cache.el
+el-get/
+eln-cache/
+elpa
+elpa/
+elpy
+eshell
+ido.last
+snippets
+straight/
+tramp
+transient
+>>>>>>> fd74fea (first commit)
