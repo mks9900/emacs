@@ -47,6 +47,11 @@
 (prefer-coding-system 'utf-8-unix)
 
 
+;; Apply line wrapping only to text and markdown:
+(add-hook 'text-mode-hook 'visual-line-mode)
+(add-hook 'markdown-mode-hook 'visual-line-mode)
+
+
 ;; Don't produce backup-files:
 (setq
  make-backup-files nil
@@ -80,7 +85,6 @@
 
 ;; Always show linenumbers in the left margin:
 (global-display-line-numbers-mode 1)
-
 
 
 (defun pt-yank ()
