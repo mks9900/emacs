@@ -423,6 +423,27 @@
   )
 
 
+;; Fuzzy completion of filenames etc.:
+(use-package helm
+  :ensure t
+  :config
+  ;; Let Helm decide best size of minibuffer:
+  (helm-autoresize-mode 1)
+  ;; Relative sizes of the above:
+  ;; (setq helm-autoresize-max-height 30) ; Max height in percentage of frame height.
+  ;; (setq helm-autoresize-min-height 20)) ; Min height in percentage of frame height.
+  ;; Set a fixed height:
+  ;; (setq helm-display-buffer-height 20) ; Set the fixed height of the Helm window.
+
+  ;; Enable fuzzy matching for all Helm commands
+  (setq helm-mode-fuzzy-match t)
+  (setq helm-completion-in-region-fuzzy-match t))
+
+(helm-mode 1)
+
+(global-set-key (kbd "C-x C-f") 'helm-find-files)
+
+
 (use-package helm-lsp
   :ensure t
   :commands helm-lsp-workspace-symbol)
