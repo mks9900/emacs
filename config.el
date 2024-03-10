@@ -247,10 +247,17 @@
   :ensure t
   :straight t
   :bind
-  (("M-j" . windmove-left)
-  ("M-i" . windmove-up)
-  ("M-k" . windmove-down)
-  ("M-l" . windmove-right)))
+  (
+   ("M-j" . windmove-left)
+   ("M-i" . windmove-up)
+   ("M-k" . windmove-down)
+   ("M-l" . windmove-right)
+   ("C-c M-l" . windmove-delete-left)
+   ("C-c M-r" . windmove-delete-right)
+   ("C-c M-d" . windmove-delete-down)
+   ("C-c M-u" . windmove-delete-up)
+   )
+  )
 
 
 ;; Vertico provides vertical interactive mode for autocompletion when opening files etc.:
@@ -277,11 +284,21 @@
 
 
 ;; Spell checking:
-(setenv "DICPATH" "/Users/johanthor/Library/Spelling:")
-
-
 (setq ispell-program-name "hunspell") ; Tell ispell to use hunspell
 (setq ispell-dictionary "en_GB,sv_SE") ; Default dictionaries. Separate with comma for hunspell.
+
+(cond
+ ((eq system-type 'darwin)
+  ;; macOS:
+  (setenv "DICPATH" "/Users/johanthor/Library/Spelling:")
+  )
+ 
+ ;; Linux-specific configurations
+ ((eq system-type 'gnu/linux)
+  (setenv "DICPATH" "/home/johanthor/.local/share/spelling:")
+  )
+ )
+
 
 ;; Function to switch dictionaries:
 (defun switch-dictionary-between-swedish-and-english ()
@@ -325,7 +342,20 @@
   (add-hook 'TeX-mode-hook '(lambda () (TeX-fold-mode 1)))
   ;; Configure PDF viewers
   (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-  (setq TeX-view-program-list '(("PDF Viewer" "/usr/bin/evince"))))
+  ;; Use different viewers on different OS:s:
+  (cond
+   ((eq system-type 'darwin)
+    ;; macOS:
+    (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/MacOS/Skim")))
+    )
+   
+   ;; Linux-specific configurations
+   ((eq system-type 'gnu/linux)
+    (setq TeX-view-program-list '(("PDF Viewer" "/usr/bin/evince")))
+    )
+   )
+  )
+  
 
 
 ;; Markdown support:
@@ -335,7 +365,19 @@
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
-  :init (setq markdown-command "/usr/local/bin/pandoc")
+  :init
+  ;; Pandoc is located at different places:
+  (cond
+   ((eq system-type 'darwin)
+    ;; macOS:
+    (setq markdown-command "/usr/local/bin/pandoc")
+    
+    ;; Linux-specific configurations
+    ((eq system-type 'gnu/linux)
+     (setq markdown-command "/usr/local/bin/pandoc")
+     )
+    )
+   )
   :hook (markdown-mode . lsp-deferred)
   :config
   (require 'lsp-marksman))
@@ -357,7 +399,20 @@
          (lsp-mode . lsp-enable-which-key-integration))
   :config
   ;; Set the path to the TexLab server if it's not automatically detected
-  (setq lsp-latex-texlab-executable "/usr/local/bin/texlab")
+  ;; Pandoc is located at different places:
+  (cond
+   ((eq system-type 'darwin)
+    ;; macOS:
+    (setq lsp-latex-texlab-executable "/usr/local/bin/texlab")
+    )
+   
+   ;; Linux-specific configurations
+   ((eq system-type 'gnu/linux)
+    (setq lsp-latex-texlab-executable "/home/johanthor/bin/texlab")
+    )
+   )
+
+  
   ;; Customization options as needed
   )
 
@@ -369,8 +424,18 @@
 ;; Previewing equations inline from LaTeX:
 (use-package math-preview
   :ensure t
-  :custom (math-preview-command "/usr/local/bin/math-preview"))
-
+  :custom
+  (cond
+   ((eq system-type 'darwin)
+    ;; macOS:
+    (math-preview-command "/usr/local/bin/math-preview")
+    )
+   
+   ;; Linux-specific configurations
+   ((eq system-type 'gnu/linux)
+    (math-preview-command "/usr/local/bin/math-preview")
+    )
+   )
 
 
 ;; Use LSP:
@@ -462,7 +527,18 @@
   :hook (after-init . global-flycheck-mode)
   ;; How can this be set on a per project way?
   ;; It seems flake8 doesn't support this?
-  (setq flycheck-flake8rc "/Users/johanthor/.config/flake8"))
+  (cond
+   ((eq system-type 'darwin)
+    ;; macOS:
+    (setq flycheck-flake8rc "/Users/johanthor/.config/flake8")
+    )
+   
+   ;; Linux-specific configurations
+   ((eq system-type 'gnu/linux)
+    (setq flycheck-flake8rc "/home/johanthor/.config/flake8")
+    )
+   )
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -545,6 +621,8 @@
   :ensure t)
 (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
 (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
+(define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
+(define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line)
 
 ;; complete by copilot first, then auto-complete:
 (defun my-tab ()
@@ -561,9 +639,6 @@
 (with-eval-after-load 'company
   ;; disable inline previews
   (delq 'company-preview-if-just-one-frontend company-frontends))
-
-(define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion) ;;<tab>
-(define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
 
 
 (use-package rainbow-delimiters
