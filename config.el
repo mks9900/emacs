@@ -7,6 +7,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set repositories to use:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(message "Loading packages...")
+
 (setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 
@@ -39,7 +41,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global settings
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(message "Applying global settings...")
 ;; Always use utf-8:
 (set-charset-priority 'unicode)
 (prefer-coding-system 'utf-8-unix)
@@ -98,6 +100,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OS-specifics:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(message "OS-specifics")
 (cond
  ((eq system-type 'darwin)
   ;; macOS keybinding-fixes:
@@ -135,7 +138,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Look and feel:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(message "Look and feel")
 (custom-set-variables
  '(blink-cursor-mode nil)
  '(menu-bar-mode nil)
@@ -201,9 +204,37 @@
   )
 
 
+(use-package rainbow-delimiters
+  :straight t
+  :ensure t
+  :hook ((prog-mode . rainbow-delimiters-mode)))
+(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+(electric-pair-mode)
+
+
+;; Delight let's you customise how modes are displayed (or hidden):
+(use-package delight
+  :ensure t
+  :straight t
+  :ensure t)
+
+
+(use-package all-the-icons
+  :ensure t)
+
+
+;; add icons to the files:
+(use-package all-the-icons-completion
+  :ensure t
+  :straight t
+  :after (marginalia all-the-icons)
+  :hook (marginalia-mode . all-the-icons-completion-marginalia-setup))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Misc settings:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(message "Misc settings")
 (setq-default
  ad-redefinition-action 'accept                      ; Silence warnings for redefinition
  cursor-in-non-selected-windows t                    ; Hide the cursor in inactive windows
@@ -236,7 +267,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Addons and customisations:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(message "Addons and customisations")
 
 (global-set-key (kbd "C-x 2") 'split-window-below)
 (global-set-key (kbd "C-x 3") 'split-window-right)
@@ -260,6 +291,39 @@
   )
 
 
+;; which-key:
+(use-package which-key
+  :ensure t
+  :config
+  (which-key-mode)
+  (setq which-key-idle-delay 0.5)  ; Adjust the delay as needed
+  ;; Other customization options here
+  )
+
+
+;; Edit files with sudo:
+(use-package sudo-edit
+  :ensure t
+  :straight t)
+
+
+;; ibuffer:
+(use-package ibuffer
+  :straight t
+  :ensure nil
+  :preface
+  (defvar protected-buffers '("*scratch*" "*Messages*")
+    "Buffer that cannot be killed.")
+
+  (defun my/protected-buffers ()
+    "Protect some buffers from being killed."
+    (dolist (buffer protected-buffers)
+      (with-current-buffer buffer
+        (emacs-lock-mode 'kill))))
+  :bind ("C-x C-b" . ibuffer)
+  :init (my/protected-buffers))
+
+
 ;; Vertico provides vertical interactive mode for autocompletion when opening files etc.:
 (use-package vertico
   :ensure t
@@ -281,6 +345,7 @@
   :init (marginalia-mode)
   :custom
   (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+
 
 
 ;; Spell checking:
@@ -328,7 +393,7 @@
 ;; LaTeX support:
 (use-package auctex
   :ensure t
-  :ensure auctex
+  ;; :ensure auctex
   :mode ("\\.tex\\'" . latex-mode)
   :config
   (setq TeX-auto-save t)
@@ -356,7 +421,6 @@
    )
   )
   
-
 
 ;; Markdown support:
 (use-package markdown-mode
@@ -412,7 +476,6 @@
     )
    )
 
-  
   ;; Customization options as needed
   )
 
@@ -436,6 +499,7 @@
     (math-preview-command "/usr/local/bin/math-preview")
     )
    )
+  )
 
 
 ;; Use LSP:
@@ -544,7 +608,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python-section:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(message "Python")
 ;; Pyenv:
 (use-package pyenv-mode
   :ensure t
@@ -614,7 +678,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Github copilot:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(message "Copilot")
 (use-package copilot
   :ensure t
   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
@@ -641,38 +705,8 @@
   (delq 'company-preview-if-just-one-frontend company-frontends))
 
 
-(use-package rainbow-delimiters
-  :straight t
-  :ensure t
-  :hook ((prog-mode . rainbow-delimiters-mode)))
-(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
-(electric-pair-mode)
-
-
-;; Edit files with sudo:
-(use-package sudo-edit
-  :ensure t
-  :straight t)
-
-
-;; ibuffer:
-(use-package ibuffer
-  :straight t
-  :ensure nil
-  :preface
-  (defvar protected-buffers '("*scratch*" "*Messages*")
-    "Buffer that cannot be killed.")
-
-  (defun my/protected-buffers ()
-    "Protect some buffers from being killed."
-    (dolist (buffer protected-buffers)
-      (with-current-buffer buffer
-        (emacs-lock-mode 'kill))))
-  :bind ("C-x C-b" . ibuffer)
-  :init (my/protected-buffers))
-
-
 ;; magit:
+(message "Magit")
 (use-package magit
   :ensure t
   :straight t
@@ -691,39 +725,10 @@
   :hook (magit-status-mode . magit-filenotify-mode))
 
 
-;; which-key:
-(use-package which-key
-  :ensure t
-  :config
-  (which-key-mode)
-  (setq which-key-idle-delay 0.5)  ; Adjust the delay as needed
-  ;; Other customization options here
-  )
-
-
-;; Delight let's you customise how modes are displayed (or hidden):
-(use-package delight
-  :ensure t
-  :straight t
-  :ensure t)
-
-
-(use-package all-the-icons
-  :ensure t)
-
-
-;; add icons to the files:
-(use-package all-the-icons-completion
-  :ensure t
-  :straight t
-  :after (marginalia all-the-icons)
-  :hook (marginalia-mode . all-the-icons-completion-marginalia-setup))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Different modes for different cases:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(message "Different modes")
 (use-package sh-script
   :ensure t
   :straight t
