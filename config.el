@@ -1,6 +1,24 @@
 ;;; package --- Summary
 
 ;;; Commentary:
+;; I use this config on four computers and so there are some cases to handle
+;; certain cases separately.
+;; To install programs called for in the below code, install them on Ubuntu
+;; using the following command:
+;; $ sudo apt install npm hunspell cargo pandoc
+;;
+;; Besides the above, also install texlive-type of package to handle Tex-files.
+;;
+;; cargo is used to build texlab later on.
+;; Also, install the following:
+;; $ sudo snap install marksman # markdown LSP-server
+;; $ npm install -g prettier # markdown formatting in Emacs
+;; $ npm install dictionary-sv
+;; $ npm install dictionary-en-gb
+;; $ sudo npm install -g pyright
+;; $ cargo install --git https://github.com/latex-lsp/texlab.git
+;;
+;; Every other package should be installed using use-package.
 
 ;;; Code:
 
