@@ -62,6 +62,9 @@
 ;; Stop Emacs from hiding:
 (unbind-key "C-z") ;; suspend-frame
 
+;; Mark whole buffer:
+(global-set-key (kbd "C-c a") 'mark-whole-buffer)
+
 
 ;; Short-cut for editing config.el:
 (defun open-init-file ()
