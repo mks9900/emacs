@@ -115,7 +115,7 @@
   (setq mac-command-modifier 'control
         select-enable-clipboard t)
   ;; Starting position and size of window:
-  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+  ;; (add-to-list 'default-frame-alist '(fullscreen . maximized))
   )
 
  ;; Linux-specific configurations
@@ -127,16 +127,27 @@
     "The XDG cache base directory.")
   (defvar xdg-config (getenv "XDG_CONFIG_HOME")
     "The XDG config base directory.")
+  )
 
   ;; Different window-sizes for different Linux-computers:
-  (cond
-   ((string-equal system-name "macbook-linux")
-    (add-to-list 'default-frame-alist '(fullscreen . maximized))
-    )
-   ((string-equal system-name "rocky-ws")
-    (set-frame-size (selected-frame) 200 100)
-    (set-frame-position (selected-frame) 650 0)
-    )
+ (cond
+  ((string-equal system-name "macbook13-linux")
+   (add-to-list 'default-frame-alist '(fullscreen . maximized))
+   (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
+   )
+  ((string-equal system-name "macbook15-macos")
+   (set-frame-size (selected-frame) 100 70)
+   (set-frame-position (selected-frame) 650 0)
+   (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
+   )
+  ((string-equal system-name "rocky-ws")
+   (set-frame-size (selected-frame) 200 100)
+   (set-frame-position (selected-frame) 650 0)
+   (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
+   )
+  ((string-equal system-name "SOD-AS104301")
+   (add-to-list 'default-frame-alist '(fullscreen . maximized))
+   (set-face-attribute 'default nil :font "Source Code Pro" :height 140)
    )
   ;; (defvar xdg-data (getenv "XDG_DATA_HOME")
   ;;   "The XDG data base directory.")
@@ -146,8 +157,56 @@
 
   ;; Example: Set the font
   ;; (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)))
+   )
   )
- )
+
+
+
+
+
+
+
+
+;; (cond
+;;  ((eq system-type 'darwin)
+;;   ;; macOS keybinding-fixes:
+;;   (setq mac-right-option-modifier 'nil)
+;;   (setq mac-command-modifier 'control
+;;         select-enable-clipboard t)
+;;   ;; Starting position and size of window:
+;;   (add-to-list 'default-frame-alist '(fullscreen . maximized))
+;;   )
+
+;;  ;; Linux-specific configurations
+;;  ((eq system-type 'gnu/linux)
+;;   ;; Define environment variables:
+;;   (defvar xdg-bin (getenv "XDG_BIN_HOME")
+;;     "The XDG bin base directory.")
+;;   (defvar xdg-cache (getenv "XDG_CACHE_HOME")
+;;     "The XDG cache base directory.")
+;;   (defvar xdg-config (getenv "XDG_CONFIG_HOME")
+;;     "The XDG config base directory.")
+
+;;   ;; Different window-sizes for different Linux-computers:
+;;   (cond
+;;    ((string-equal system-name "macbook-linux")
+;;     (add-to-list 'default-frame-alist '(fullscreen . maximized))
+;;     )
+;;    ((string-equal system-name "rocky-ws")
+;;     (set-frame-size (selected-frame) 200 100)
+;;     (set-frame-position (selected-frame) 650 0)
+;;     )
+;;    )
+;;   ;; (defvar xdg-data (getenv "XDG_DATA_HOME")
+;;   ;;   "The XDG data base directory.")
+  
+;;   ;; (defvar xdg-lib (getenv "XDG_LIB_HOME")
+;;   ;;   "The XDG lib base directory.")
+
+;;   ;; Example: Set the font
+;;   ;; (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)))
+;;   )
+;;  )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
