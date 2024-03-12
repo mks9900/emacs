@@ -126,105 +126,42 @@
 ;; OS-specifics:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "OS-specifics")
+
 (cond
  ((eq system-type 'darwin)
   ;; macOS keybinding-fixes:
   (setq mac-right-option-modifier 'nil)
   (setq mac-command-modifier 'control
         select-enable-clipboard t)
-  ;; Starting position and size of window:
-  ;; (add-to-list 'default-frame-alist '(fullscreen . maximized))
+  (cond
+   ((string-equal system-name "macbook13-linux")
+    (add-to-list 'default-frame-alist '(fullscreen . maximized))
+    (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
+    )
+   ((string-equal system-name "macbook15-macos.vilanelva.se")
+    (add-to-list 'default-frame-alist '(fullscreen . maximized))
+    (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
+    )
+   )
   )
 
  ;; Linux-specific configurations
  ((eq system-type 'gnu/linux)
-  ;; Define environment variables:
-  (defvar xdg-bin (getenv "XDG_BIN_HOME")
-    "The XDG bin base directory.")
-  (defvar xdg-cache (getenv "XDG_CACHE_HOME")
-    "The XDG cache base directory.")
-  (defvar xdg-config (getenv "XDG_CONFIG_HOME")
-    "The XDG config base directory.")
-  )
-
-  ;; Different window-sizes for different Linux-computers:
- (cond
-  ((string-equal system-name "macbook13-linux")
-   (add-to-list 'default-frame-alist '(fullscreen . maximized))
-   (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
-   )
-  ((string-equal system-name "macbook15-macos")
-   (set-frame-size (selected-frame) 100 70)
-   (set-frame-position (selected-frame) 650 0)
-   (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
-   )
+  (defvar xdg-bin (getenv "XDG_BIN_HOME"))
+  (defvar xdg-cache (getenv "XDG_CACHE_HOME"))
+  (defvar xdg-config (getenv "XDG_CONFIG_HOME"))
   ((string-equal system-name "rocky-ws")
    (set-frame-size (selected-frame) 200 100)
    (set-frame-position (selected-frame) 650 0)
    (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
    )
+  ;; WSL is also reported as Linux :-)
   ((string-equal system-name "SOD-AS104301")
    (add-to-list 'default-frame-alist '(fullscreen . maximized))
    (set-face-attribute 'default nil :font "Source Code Pro" :height 140)
    )
-  ;; (defvar xdg-data (getenv "XDG_DATA_HOME")
-  ;;   "The XDG data base directory.")
-  
-  ;; (defvar xdg-lib (getenv "XDG_LIB_HOME")
-  ;;   "The XDG lib base directory.")
-
-  ;; Example: Set the font
-  ;; (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)))
-   )
   )
-
-
-
-
-
-
-
-
-;; (cond
-;;  ((eq system-type 'darwin)
-;;   ;; macOS keybinding-fixes:
-;;   (setq mac-right-option-modifier 'nil)
-;;   (setq mac-command-modifier 'control
-;;         select-enable-clipboard t)
-;;   ;; Starting position and size of window:
-;;   (add-to-list 'default-frame-alist '(fullscreen . maximized))
-;;   )
-
-;;  ;; Linux-specific configurations
-;;  ((eq system-type 'gnu/linux)
-;;   ;; Define environment variables:
-;;   (defvar xdg-bin (getenv "XDG_BIN_HOME")
-;;     "The XDG bin base directory.")
-;;   (defvar xdg-cache (getenv "XDG_CACHE_HOME")
-;;     "The XDG cache base directory.")
-;;   (defvar xdg-config (getenv "XDG_CONFIG_HOME")
-;;     "The XDG config base directory.")
-
-;;   ;; Different window-sizes for different Linux-computers:
-;;   (cond
-;;    ((string-equal system-name "macbook-linux")
-;;     (add-to-list 'default-frame-alist '(fullscreen . maximized))
-;;     )
-;;    ((string-equal system-name "rocky-ws")
-;;     (set-frame-size (selected-frame) 200 100)
-;;     (set-frame-position (selected-frame) 650 0)
-;;     )
-;;    )
-;;   ;; (defvar xdg-data (getenv "XDG_DATA_HOME")
-;;   ;;   "The XDG data base directory.")
-  
-;;   ;; (defvar xdg-lib (getenv "XDG_LIB_HOME")
-;;   ;;   "The XDG lib base directory.")
-
-;;   ;; Example: Set the font
-;;   ;; (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)))
-;;   )
-;;  )
+ )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -240,19 +177,43 @@
  '(warning-suppress-types '((use-package))))
 
 
+;; Customize mode line appearance for active and inactive buffers
+(set-face-attribute 'mode-line nil :foreground "gray50" :background "black" :box '(:line-width 1 :color "gray50"))
+(set-face-attribute 'mode-line-inactive nil :foreground "white" :background "gray20" :box '(:line-width 1 :color "gray20"))
+
+
+;; Make the window divider line thicker
+(setq window-divider-default-places t
+      window-divider-default-bottom-width 2
+      window-divider-default-right-width 2)
+
+
 ;; Show filename in title:
 (setq frame-title-format
       (list (format "%s %%S: %%j " (system-name))
         '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
 
-;; Set the font:
-(set-face-attribute 'default nil :font "Source Code Pro" :height 180)
-
-
 ;; Make commented text stand out better:
 (custom-set-faces
- '(font-lock-comment-face ((t (:foreground "gray50")))))
+ '(font-lock-comment-face ((t (:foreground "gray60")))))
+
+
+;; Make a greater difference between active and inactive buffers:
+(use-package dimmer
+  :ensure t
+  :config
+  ;; Adjust the dimming fraction (the default is 0.20)
+  (setq dimmer-fraction 0.40)
+  
+  ;; Exclude some buffers from being dimmed
+  (add-to-list 'dimmer-exclusion-regexp-list "^\*helm")
+  (add-to-list 'dimmer-exclusion-regexp-list "^\*Minibuf")
+  
+  ;; Configure and activate dimmer
+  (dimmer-configure-which-key)
+  (dimmer-configure-magit)
+  (dimmer-mode t))
 
 
 ;; Mouse scroll speed:
