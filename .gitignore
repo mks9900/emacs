@@ -19,7 +19,7 @@ tramp
 transient
 # Compiled
 *.elc
-
+projectile*
 # Packaging
 .cask
 
