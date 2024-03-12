@@ -255,8 +255,8 @@
   (setq doom-modeline-icon t)
   (setq doom-modeline-lsp t)
   (setq doom-modeline-env-version t)
-  (setq doom-modeline-env-enable-python t)
-  (setq doom-modeline-env-python-executable "python") ; or `python-shell-interpreter'
+  ;; (setq doom-modeline-env-enable-python t)
+  ;; (setq doom-modeline-env-python-executable "python-shell-interpreter") ; was: "python" or `python-shell-interpreter'
   )
 
 
@@ -403,7 +403,6 @@
   (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
 
 
-
 ;; Spell checking:
 (setq ispell-program-name "hunspell") ; Tell ispell to use hunspell
 (setq ispell-dictionary "en_GB,sv_SE") ; Default dictionaries. Separate with comma for hunspell.
@@ -437,16 +436,17 @@
 ;; Decide which modes to spellcheck:
 (dolist (hook '(text-mode-hook
                 markdown-mode-hook
-                latex-mode-hook
-                python-mode-hook)) ; Add other modes as needed.
+                latex-mode-hook))
+                ;; python-mode-hook)) ; Add other modes as needed.
   (add-hook hook (lambda () (flyspell-mode 1))))
 
 ;; Use below to not spellcheck code:
-(dolist (hook '(python-mode-hook)) ; Add other programming modes as needed.
-  (add-hook hook (lambda () (flyspell-prog-mode))))
+;; (dolist (hook '(python-mode-hook)) ; Add other programming modes as needed.
+  ;; (add-hook hook (lambda () (flyspell-prog-mode))))
 
 
 ;; LaTeX support:
+(message "LaTeX")
 (use-package auctex
   :ensure t
   ;; :ensure auctex
@@ -490,17 +490,16 @@
   (cond
    ((eq system-type 'darwin)
     ;; macOS:
-    (setq markdown-command "/usr/local/bin/pandoc")
-    
-    ;; Linux-specific configurations
-    ((eq system-type 'gnu/linux)
-     (setq markdown-command "/usr/local/bin/pandoc")
-     )
-    )
+    (setq markdown-command "/usr/local/bin/pandoc"))
+   
+   ;; Linux-specific configurations
+   ((eq system-type 'gnu/linux)
+    (setq markdown-command "/usr/bin/pandoc"))
    )
   :hook (markdown-mode . lsp-deferred)
   :config
-  (require 'lsp-marksman))
+  (require 'lsp-marksman)
+  )
 
 
 (use-package markdown-preview-mode
@@ -560,6 +559,7 @@
 
 
 ;; Use LSP:
+(message "LSP...")
 (use-package lsp-mode
   :ensure t
   :hook ((lisp-mode . lsp)
@@ -655,18 +655,23 @@
   :hook (after-init . global-flycheck-mode)
   ;; How can this be set on a per project way?
   ;; It seems flake8 doesn't support this?
+  :config
   (cond
    ((eq system-type 'darwin)
-    ;; macOS:
-    (setq flycheck-flake8rc "/Users/johanthor/.config/flake8")
-    )
-   
-   ;; Linux-specific configurations
+    (setq flycheck-flake8rc "/Users/johanthor/.config/flake8"))
    ((eq system-type 'gnu/linux)
-    (setq flycheck-flake8rc "/home/johanthor/.config/flake8")
-    )
+    (setq flycheck-flake8rc "/home/johanthor/.config/flake8"))
    )
   )
+
+;; tip to automatically set the correct interpreter:
+(defun my/set-flycheck-python-interpreter ()
+  "Set Flycheck Python interpreter to the one specified by pyenv."
+  (let ((pyenv-path (executable-find "python")))
+    (setq-local flycheck-python-pyflakes-executable pyenv-path)
+    (setq-local flycheck-python-flake8-executable pyenv-path)))
+
+(add-hook 'python-mode-hook #'my/set-flycheck-python-interpreter)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -676,6 +681,8 @@
 ;; Pyenv:
 (use-package pyenv-mode
   :ensure t
+  :init
+  (add-to-list 'exec-path "~/.pyenv/shims")
   :config
   (pyenv-mode))
 
@@ -684,7 +691,73 @@
   (add-to-list 'exec-path (concat (getenv "PYENV_ROOT") "/shims")))
 
 (add-hook 'python-mode-hook 'pyenv-mode)
-(global-set-key (kbd "C-c p") 'pyenv-mode-set) ; Set key binding to switch pyenv environments
+(global-set-key (kbd "C-c C-s") 'pyenv-mode-set) ; Set key binding to switch pyenv environments
+
+
+
+
+
+
+;; ;; Experimental elpy integration...
+;; (use-package elpy
+;;   :ensure t
+;;   :init
+;;   (elpy-enable))
+
+
+;; (use-package exec-path-from-shell
+;;   :ensure t
+;;   :config
+;;   (exec-path-from-shell-initialize))
+
+
+;; ;; what do set here?
+;; ;; (setq elpy-rpc-python-command "python3")
+;; ;; (setq python-shell-interpreter "python3")
+
+;; ;; (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+;; ;; (add-hook 'elpy-mode-hook 'flycheck-mode)
+
+
+;; (defun my/elpy-set-python-interpreter ()
+;;   "Set the Python interpreter for elpy based on the active pyenv version."
+;;   (let ((pyenv-version-name (pyenv-mode-version)))
+;;     (when pyenv-version-name
+;;       (setq elpy-rpc-python-command (concat "~/.pyenv/versions/" pyenv-version-name "/bin/python"))
+;;       (setq python-shell-interpreter elpy-rpc-python-command))))
+
+;; (add-hook 'pyenv-mode-hook 'my/elpy-set-python-interpreter)
+
+
+;; ;; find a .python-version and activate it...
+;; (defun my/activate-pyenv-virtualenv ()
+;;   "Automatically activate the virtualenv that matches the .python-version."
+;;   (let ((pyenv-version (pyenv-mode-version)))
+;;     (when pyenv-version
+;;       (pyvenv-activate (concat "~/.pyenv/versions/" pyenv-version)))))
+
+;; (add-hook 'python-mode-hook 'my/activate-pyenv-virtualenv)
+
+
+;; (defun my/pyvenv-activate-pyenv ()
+;;   "Activate a pyenv virtual environment by selecting from a list of available pyenv environments."
+;;   (interactive)
+;;   (let* ((root "~/.pyenv/versions") ; Adjust if your pyenv versions are stored elsewhere
+;;          (envs (mapcar (lambda (dir)
+;;                          (substring dir (length root) (length dir)))
+;;                        (directory-files root t directory-files-no-dot-files-regexp)))
+;;          (chosen-env (completing-read "Choose pyenv environment: " envs)))
+;;     (pyvenv-activate (expand-file-name chosen-env root))))
+
+;; (global-set-key (kbd "C-c M-p") 'my/pyvenv-activate-pyenv)
+
+
+
+
+
+;; ;;; end elpy experiment
+
+
 
 
 ;; Misc Python goodies:
@@ -698,6 +771,15 @@
   :straight (:host github :repo "humitos/py-cmd-buffer.el")
   :config
   (setq py-pyment-options '("--output=numpydoc")))
+
+
+;; py-isort below seems to depend on this:
+(use-package projectile
+  :ensure t
+  :config
+  (projectile-mode +1)
+  ;; Set up your preferred keymap prefix, e.g., "C-c p"
+  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
 
 
 (use-package py-isort
@@ -746,11 +828,16 @@
 (use-package copilot
   :ensure t
   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
-  :ensure t)
-(define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
-(define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
-(define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
-(define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line)
+  :ensure t
+  :hook ((python-mode . copilot-mode)
+         (markdown-mode . copilot-mode)
+         (emacs-lisp-mode . copilot-mode)
+         (latex-mode . copilot-mode))
+  :config
+  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
+  (define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
+  (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line))
 
 ;; complete by copilot first, then auto-complete:
 (defun my-tab ()
