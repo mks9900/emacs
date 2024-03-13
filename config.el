@@ -83,6 +83,12 @@
 ;; Stop Emacs from hiding:
 (unbind-key "C-z") ;; suspend-frame
 
+
+;; Stop Emacs from throwing up buffers with warnings:
+(defvar warning-minimum-level)
+(setq warning-minimum-level :emergency)
+
+
 ;; Mark whole buffer:
 (global-set-key (kbd "C-c a") 'mark-whole-buffer)
 
@@ -206,11 +212,14 @@
 
 
 ;; Make a greater difference between active and inactive buffers:
+(defvar dimmer-delay)
 (use-package dimmer
   :ensure t
   :config
   ;; Adjust the dimming fraction (the default is 0.20)
   (setq dimmer-fraction 0.40)
+  (setq dimmer-delay 0.5) ; Adjust the delay in seconds
+
   
   ;; Exclude some buffers from being dimmed
   (add-to-list 'dimmer-exclusion-regexp-list "^\*helm")
@@ -353,6 +362,12 @@
   )
 
 
+;; A more visual approach to viewing the kill-ring:
+(use-package helm
+  :ensure t
+  :bind ("M-y" . helm-show-kill-ring))
+
+
 ;; which-key:
 (use-package which-key
   :ensure t
@@ -459,6 +474,12 @@
 
 ;; LaTeX support:
 (message "LaTeX")
+(defvar TeX-auto-save)
+(defvar TeX-parse-self)
+(defvar TeX-master)
+(defvar TeX-engine)
+(defvar TeX-view-program-selection)
+(defvar TeX-view-program-list)
 
 (use-package auctex
   :ensure auctex
@@ -482,12 +503,14 @@
   (cond
    ((eq system-type 'darwin)
     ;; macOS:
-    (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/MacOS/Skim")))
+    (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/MacOS/Skim"))))
     ;; (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b"))))
    
    ((eq system-type 'gnu/linux)
     ;; Linux:
-    (setq TeX-view-program-list '(("PDF Viewer" "evince %o")))))))
+    (setq TeX-view-program-list '(("PDF Viewer" "evince %o"))))
+   )
+  )
 
 
 ;; Markdown support:
@@ -573,6 +596,13 @@
 
 ;; Use LSP:
 (message "LSP...")
+(defvar lsp-pyright-venv-path)
+(defvar lsp-pyright-auto-search-paths)
+(defvar lsp-pyright-use-library-code-for-types)
+(defvar lsp-ui-flycheck-enable)
+(defvar lsp-ui-flycheck-list-position)
+(defvar lsp-ui-flycheck-live-reporting)
+
 (use-package lsp-mode
   :ensure t
   :hook ((lisp-mode . lsp)
@@ -630,6 +660,11 @@
 
 
 ;; Fuzzy completion of filenames etc.:
+(defvar helm-autoresize-mode)
+(defvar helm-autoresize-max-height)
+(defvar helm-mode-fuzzy-match)
+(defvar helm-completion-in-region-fuzzy-match)
+
 (use-package helm
   :ensure t
   :config
@@ -875,6 +910,9 @@
   (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line))
 
 ;; complete by copilot first, then auto-complete:
+(defvar ac-disable-inline)
+(defvar ac-candidate-menu-min)
+
 (defun my-tab ()
         "Complete by copilot first, then auto-complete."
   (interactive)
