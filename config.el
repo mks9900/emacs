@@ -50,6 +50,9 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
+;; suppress a warning about Emacs complaining about
+;; straight not being defined:
+(declare-function straight-use-package "ext:straight.el")
 
 ;; Integrates `straight' directly into the `use-package' package through the `:straight' expression.
 (straight-use-package 'use-package)
@@ -134,11 +137,11 @@
   (setq mac-command-modifier 'control
         select-enable-clipboard t)
   (cond
-   ((string-equal system-name "macbook13-linux")
+   ((string-equal (system-name) "macbook13-linux")
     (add-to-list 'default-frame-alist '(fullscreen . maximized))
     (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
     )
-   ((string-equal system-name "macbook15-macos.vilanelva.se")
+   ((string-equal (system-name) "macbook15-macos.vilanelva.se")
     (add-to-list 'default-frame-alist '(fullscreen . maximized))
     (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
     )
@@ -152,13 +155,13 @@
   (defvar xdg-config (getenv "XDG_CONFIG_HOME"))
 
   (cond
-   ((string-equal system-name "rocky-ws")
+   ((string-equal (system-name) "rocky-ws")
     (set-frame-size (selected-frame) 200 100)
     (set-frame-position (selected-frame) 650 0)
     (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
     )
    ;; WSL is also reported as Linux :-)
-   ((string-equal system-name "SOD-AS104301")
+   ((string-equal (system-name) "SOD-AS104301")
     (add-to-list 'default-frame-alist '(fullscreen . maximized))
     (set-face-attribute 'default nil :font "Source Code Pro" :height 140)
     )
@@ -228,6 +231,8 @@
 ;; (straight-use-package 'material-theme)
 ;; (load-theme 'material t)
 
+;; Below is a one-liner to suppress a warning...
+(defvar doom-themes-treemacs-theme)
 
 (use-package doom-themes
   :ensure t
@@ -241,11 +246,14 @@
   (doom-themes-visual-bell-config)
   ;; Enable custom neotree theme (all-the-icons must be installed!)
   (doom-themes-neotree-config)
-  ;; or for treemacs users
-  (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
-  (doom-themes-treemacs-config)
+  
   ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config))
+  (doom-themes-org-config)
+
+  ;; Ensure this is set after doom-themes has been loaded
+  (with-eval-after-load 'doom-themes
+    (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
+    (doom-themes-treemacs-config)))
 
 
 (use-package doom-modeline
@@ -264,7 +272,6 @@
   :straight t
   :ensure t
   :hook ((prog-mode . rainbow-delimiters-mode)))
-(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 (electric-pair-mode)
 
 
@@ -404,8 +411,13 @@
 
 
 ;; Spell checking:
-(setq ispell-program-name "hunspell") ; Tell ispell to use hunspell
-(setq ispell-dictionary "en_GB,sv_SE") ; Default dictionaries. Separate with comma for hunspell.
+(use-package ispell
+  :ensure nil ; `ispell` is bundled with Emacs, so we don't need to install it...
+  :config
+  ;; Set Hunspell as the default spell checker
+  (setq ispell-program-name "hunspell")
+  ;; Set the default dictionaries
+  (setq ispell-dictionary "en_GB,sv_SE"))
 
 (cond
  ((eq system-type 'darwin)
@@ -422,6 +434,7 @@
 
 ;; Function to switch dictionaries:
 (defun switch-dictionary-between-swedish-and-english ()
+  "Switch the current spell-checking dictionary between Swedish and English."
   (interactive)
   (let* ((current (if (bound-and-true-p ispell-local-dictionary)
                       ispell-local-dictionary
@@ -447,36 +460,38 @@
 
 ;; LaTeX support:
 (message "LaTeX")
+
 (use-package auctex
-  :ensure t
-  ;; :ensure auctex
+  :ensure auctex
   :mode ("\\.tex\\'" . latex-mode)
   :config
-  (setq TeX-auto-save t)
-  (setq TeX-parse-self t)
-  (setq-default TeX-master nil) ;; Query for the master file
-  (setq-default TeX-engine 'xetex)
+  ;; AUCTeX configurations
+  (setq TeX-auto-save t
+        TeX-parse-self t
+        TeX-master nil  ; Query for the master file
+        TeX-engine 'xetex)
   (add-hook 'LaTeX-mode-hook 'visual-line-mode)
   (add-hook 'LaTeX-mode-hook 'flyspell-mode)
   (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-  ;; Enable TeX-fold-mode automatically in TeX-mode
-  (add-hook 'TeX-mode-hook '(lambda () (TeX-fold-mode 1)))
+  
+  ;; Use `#'(lambda ...)` for correct lambda syntax
+  (add-hook 'TeX-mode-hook #'(lambda () (TeX-fold-mode 1)))
+
   ;; Configure PDF viewers
   (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-  ;; Use different viewers on different OS:s:
+  ;; Conditional setting based on OS type
   (cond
    ((eq system-type 'darwin)
     ;; macOS:
     (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/MacOS/Skim")))
-    )
+    ;; (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b"))))
    
-   ;; Linux-specific configurations
    ((eq system-type 'gnu/linux)
-    (setq TeX-view-program-list '(("PDF Viewer" "/usr/bin/evince")))
-    )
-   )
-  )
-  
+    ;; Linux:
+    (setq TeX-view-program-list '(("PDF Viewer" "evince %o"))))))
+
+
+
 
 ;; Markdown support:
 (use-package markdown-mode
@@ -694,6 +709,29 @@
 (global-set-key (kbd "C-c C-s") 'pyenv-mode-set) ; Set key binding to switch pyenv environments
 
 
+;; Indentation guides
+(use-package indent-bars
+  :straight (indent-bars :type git :host github :repo "jdtsmith/indent-bars")
+  :custom
+  (indent-bars-treesit-support t)
+  (indent-bars-no-descend-string t)
+   (indent-bars-treesit-ignore-blank-lines-types '("module"))
+   (indent-bars-treesit-wrap '((python argument_list parameters ; for python, as an example
+       			              list list_comprehension
+       			              dictionary dictionary_comprehension
+       			              parenthesized_expression subscript)))
+  :config
+  (setq
+   indent-bars-color '(highlight :face-bg t :blend 0.3)
+   indent-bars-prefer-character 1
+   ;; indent-bars-pattern ".*.*.*.*"
+   indent-bars-width-frac 0.9
+   indent-bars-pad-frac 0.2
+   indent-bars-zigzag 0.1
+   indent-bars-color-by-depth '(:palette ("red" "green" "orange" "cyan") :blend 1)
+   indent-bars-highlight-current-depth '(:blend 0.5))
+  :hook
+  ((python-base-mode) . indent-bars-mode))
 
 
 
@@ -841,6 +879,7 @@
 
 ;; complete by copilot first, then auto-complete:
 (defun my-tab ()
+        "Complete by copilot first, then auto-complete."
   (interactive)
   (or (copilot-accept-completion-by-word)
       (ac-expand nil)))
