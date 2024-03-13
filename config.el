@@ -362,12 +362,6 @@
   )
 
 
-;; A more visual approach to viewing the kill-ring:
-(use-package helm
-  :ensure t
-  :bind ("M-y" . helm-show-kill-ring))
-
-
 ;; which-key:
 (use-package which-key
   :ensure t
