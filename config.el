@@ -278,8 +278,7 @@
 ;; Delight let's you customise how modes are displayed (or hidden):
 (use-package delight
   :ensure t
-  :straight t
-  :ensure t)
+  :straight t)
 
 
 (use-package all-the-icons
@@ -488,12 +487,11 @@
    
    ((eq system-type 'gnu/linux)
     ;; Linux:
-    (setq TeX-view-program-list '(("PDF Viewer" "evince %o"))))))
-
-
+    (setq TeX-view-program-list '(("PDF Viewer" "evince %o")))))))
 
 
 ;; Markdown support:
+  
 (use-package markdown-mode
   :ensure t
   :commands (markdown-mode gfm-mode)
@@ -866,7 +864,6 @@
 (use-package copilot
   :ensure t
   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
-  :ensure t
   :hook ((python-mode . copilot-mode)
          (markdown-mode . copilot-mode)
          (emacs-lisp-mode . copilot-mode)
@@ -923,7 +920,6 @@
   :ensure t
   :straight t
   :delight "δ"
-  :ensure nil
   :hook (after-save . executable-make-buffer-file-executable-if-script-p))
 
 ;; Enable company mode in shell scripts
