@@ -903,10 +903,11 @@
   (define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
   (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line))
 
-;; complete by copilot first, then auto-complete:
+;; Fix warnings about assignment to free variables:
 (defvar ac-disable-inline)
 (defvar ac-candidate-menu-min)
 
+;; complete by copilot first, then auto-complete:
 (defun my-tab ()
         "Complete by copilot first, then auto-complete."
   (interactive)
