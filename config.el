@@ -895,7 +895,7 @@
 
 ;; On WSL2, we don't have the right node-version available and therefore
 ;; we have to skip copilot-installation:
-(if (not (string= (system-name) "SOD-AS104301"))
+(if (not (string-equal (system-name) "SOD-AS104301"))
     (use-package copilot
       :ensure t
       :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
