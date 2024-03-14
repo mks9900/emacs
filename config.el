@@ -136,6 +136,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "OS-specifics")
 
+(defvar mac-right-option-modifier)
+(defvar mac-command-modifier)
 (cond
  ((eq system-type 'darwin)
   ;; macOS keybinding-fixes:
@@ -890,39 +892,44 @@
 ;; Github copilot:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "Copilot")
-(use-package copilot
-  :ensure t
-  :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
-  :hook ((python-mode . copilot-mode)
-         (markdown-mode . copilot-mode)
-         (emacs-lisp-mode . copilot-mode)
-         (latex-mode . copilot-mode))
-  :config
-  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
-  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
-  (define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
-  (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line))
 
-;; Fix warnings about assignment to free variables:
-(defvar ac-disable-inline)
-(defvar ac-candidate-menu-min)
+;; On WSL2, we don't have the right node-version available and therefore
+;; we have to skip copilot-installation:
+(cond
+ (not (system-name eq "SOD-AS104301"))
+ (use-package copilot
+   :ensure t
+   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
+   :hook ((python-mode . copilot-mode)
+          (markdown-mode . copilot-mode)
+          (emacs-lisp-mode . copilot-mode)
+          (latex-mode . copilot-mode))
+   :config
+   (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+   (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
+   (define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
+   (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line))
 
-;; complete by copilot first, then auto-complete:
-(defun my-tab ()
-        "Complete by copilot first, then auto-complete."
-  (interactive)
-  (or (copilot-accept-completion-by-word)
-      (ac-expand nil)))
+ ;; Fix warnings about assignment to free variables:
+ (defvar ac-disable-inline)
+ (defvar ac-candidate-menu-min)
 
-(with-eval-after-load 'auto-complete
-  ; disable inline preview
-  (setq ac-disable-inline t)
-  ; show menu if have only one candidate
-  (setq ac-candidate-menu-min 0))
+ ;; complete by copilot first, then auto-complete:
+ (defun my-tab ()
+   "Complete by copilot first, then auto-complete."
+   (interactive)
+   (or (copilot-accept-completion-by-word)
+       (ac-expand nil)))
 
-(with-eval-after-load 'company
-  ;; disable inline previews
-  (delq 'company-preview-if-just-one-frontend company-frontends))
+ (with-eval-after-load 'auto-complete
+                                        ; disable inline preview
+   (setq ac-disable-inline t)
+                                        ; show menu if have only one candidate
+   (setq ac-candidate-menu-min 0))
+
+ (with-eval-after-load 'company
+   ;; disable inline previews
+   (delq 'company-preview-if-just-one-frontend company-frontends)))
 
 
 ;; magit:
