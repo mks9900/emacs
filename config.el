@@ -160,8 +160,8 @@
 
   (cond
    ((string-equal (system-name) "rocky-ws")
-    (set-frame-size (selected-frame) 200 100)
-    (set-frame-position (selected-frame) 650 0)
+    (set-frame-size (selected-frame) 150 70)
+    (set-frame-position (selected-frame) 850 0)
     (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
     )
    ((string-equal (system-name) "macbook13-linux")
