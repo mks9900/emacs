@@ -22,7 +22,7 @@ transient
 projectile*
 # Packaging
 .cask
-
+url/
 # Backup files
 *~
 
