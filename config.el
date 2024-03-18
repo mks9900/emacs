@@ -145,10 +145,6 @@
   (setq mac-command-modifier 'control
         select-enable-clipboard t)
   (cond
-   ((string-equal (system-name) "macbook13-linux")
-    (add-to-list 'default-frame-alist '(fullscreen . maximized))
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
-    )
    ((string-equal (system-name) "macbook15-macos.vilanelva.se")
     (add-to-list 'default-frame-alist '(fullscreen . maximized))
     (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
@@ -167,6 +163,10 @@
     (set-frame-size (selected-frame) 200 100)
     (set-frame-position (selected-frame) 650 0)
     (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
+    )
+   ((string-equal (system-name) "macbook13-linux")
+    (add-to-list 'default-frame-alist '(fullscreen . maximized))
+    (set-face-attribute 'default nil :font "Source Code Pro" :height 200)
     )
    ;; WSL is also reported as Linux :-)
    ((string-equal (system-name) "SOD-AS104301")
@@ -963,10 +963,10 @@
 
 ;; Enable company mode in shell scripts
 (defun my-shell-script-mode-setup ()
-  "Custom shell script mode setup."
-  (company-mode 1)) ; Enable company-mode
 
-(add-hook 'sh-mode-hook #'my-shell-script-mode-setup)
+  (Company-Mode 1)) ; Enable Company-Mode
+
+(Add-Hook 'Sh-Mode-Hook #'My-shell-script-mode-setup)
 
 
 (use-package csv-mode
