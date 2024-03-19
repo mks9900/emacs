@@ -242,6 +242,29 @@
 ;; (straight-use-package 'material-theme)
 ;; (load-theme 'material t)
 
+;; Install icons:
+(use-package all-the-icons
+  :ensure t)
+
+
+(use-package nerd-icons
+  :ensure t
+  ;; :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+  )
+
+
+;; add icons to the files:
+(use-package all-the-icons-completion
+  :ensure t
+  :straight t
+  :after (marginalia all-the-icons)
+  :hook (marginalia-mode . all-the-icons-completion-marginalia-setup))
+
+
 ;; Below is a one-liner to suppress a warning...
 (defvar doom-themes-treemacs-theme)
 
@@ -290,18 +313,6 @@
 (use-package delight
   :ensure t
   :straight t)
-
-
-(use-package all-the-icons
-  :ensure t)
-
-
-;; add icons to the files:
-(use-package all-the-icons-completion
-  :ensure t
-  :straight t
-  :after (marginalia all-the-icons)
-  :hook (marginalia-mode . all-the-icons-completion-marginalia-setup))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
