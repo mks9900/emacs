@@ -80,6 +80,10 @@
  create-lockfiles nil)
 
 
+(defvar python-indent-offset)
+(setq python-indent-offset 4)
+
+
 ;; Stop Emacs from hiding:
 (unbind-key "C-z") ;; suspend-frame
 
@@ -440,17 +444,18 @@
   ;; Set the default dictionaries
   (setq ispell-dictionary "en_GB,sv_SE"))
 
-(cond
- ((eq system-type 'darwin)
-  ;; macOS:
-  (setenv "DICPATH" "/Users/johanthor/Library/Spelling:")
-  )
+;; Isn't this set in .zshrc?
+;; (cond
+;;  ((eq system-type 'darwin)
+;;   ;; macOS:
+;;   (setenv "DICPATH" "/Users/johanthor/Library/Spelling:")
+;;   )
  
- ;; Linux-specific configurations
- ((eq system-type 'gnu/linux)
-  (setenv "DICPATH" "/home/johanthor/.local/share/spelling:")
-  )
- )
+;;  ;; Linux-specific configurations
+;;  ((eq system-type 'gnu/linux)
+;;   (setenv "DICPATH" "/home/johanthor/.local/share/spelling:")
+;;   )
+;;  )
 
 
 ;; Function to switch dictionaries:
@@ -467,16 +472,16 @@
 (global-set-key (kbd "<f8>") 'switch-dictionary-between-swedish-and-english) ; Bind to F8 key
 
 
-;; Decide which modes to spellcheck:
-(dolist (hook '(text-mode-hook
-                markdown-mode-hook
-                latex-mode-hook))
-                ;; python-mode-hook)) ; Add other modes as needed.
-  (add-hook hook (lambda () (flyspell-mode 1))))
+;; ;; Decide which modes to spellcheck:
+;; (dolist (hook '(text-mode-hook
+;;                 markdown-mode-hook
+;;                 latex-mode-hook))
+;;                 ;; python-mode-hook)) ; Add other modes as needed.
+;;   (add-hook hook (lambda () (flyspell-mode 1))))
 
-;; Use below to not spellcheck code:
+;; ;; Use below to not spellcheck code:
 ;; (dolist (hook '(python-mode-hook)) ; Add other programming modes as needed.
-  ;; (add-hook hook (lambda () (flyspell-prog-mode))))
+;;   (add-hook hook (lambda () (flyspell-prog-mode))))
 
 
 ;; LaTeX support:
@@ -587,17 +592,19 @@
 (use-package math-preview
   :ensure t
   :custom
-  (cond
-   ((eq system-type 'darwin)
-    ;; macOS:
-    (math-preview-command "/usr/local/bin/math-preview")
-    )
+  ;; Below is the same for macOS and Linux, install through npm:
+  (math-preview-command "/usr/local/bin/math-preview")
+  ;; (cond
+  ;;  ((eq system-type 'darwin)
+  ;;   ;; macOS:
+  ;;   (math-preview-command "/usr/local/bin/math-preview")
+  ;;   )
    
-   ;; Linux-specific configurations
-   ((eq system-type 'gnu/linux)
-    (math-preview-command "/usr/local/bin/math-preview")
-    )
-   )
+  ;;  ;; Linux-specific configurations
+  ;;  ((eq system-type 'gnu/linux)
+  ;;   (math-preview-command "/usr/local/bin/math-preview")
+  ;;   )
+  ;;  )
   )
 
 
@@ -733,6 +740,7 @@
 ;; Python-section:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "Python")
+
 ;; Pyenv:
 (use-package pyenv-mode
   :ensure t
@@ -983,6 +991,7 @@
 (use-package csv-mode
   :ensure t
   :mode ("\\.\\(csv\\|tsv\\)\\'"))
+(add-hook 'csv-mode-hook (lambda () (flyspell-mode -1)))
 
 
 (use-package dockerfile-mode
