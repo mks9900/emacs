@@ -138,7 +138,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OS-specifics:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "OS-specifics")
+(message "OS-specifics...")
 
 (defvar mac-right-option-modifier)
 (defvar mac-command-modifier)
@@ -185,7 +185,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Look and feel:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Look and feel")
+(message "Look and feel...")
 (custom-set-variables
  '(blink-cursor-mode nil)
  '(menu-bar-mode nil)
@@ -322,7 +322,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Misc settings:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Misc settings")
+(message "Misc settings...")
 (setq-default
  ad-redefinition-action 'accept                      ; Silence warnings for redefinition
  cursor-in-non-selected-windows t                    ; Hide the cursor in inactive windows
@@ -355,7 +355,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Addons and customisations:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Addons and customisations")
+(message "Addons and customisations...")
 
 (global-set-key (kbd "C-x 2") 'split-window-below)
 (global-set-key (kbd "C-x 3") 'split-window-right)
@@ -485,7 +485,7 @@
 
 
 ;; LaTeX support:
-(message "LaTeX")
+(message "LaTeX...")
 (defvar TeX-auto-save)
 (defvar TeX-parse-self)
 (defvar TeX-master)
@@ -739,7 +739,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python-section:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Python")
+(message "Python-specifics...")
 
 ;; Pyenv:
 (use-package pyenv-mode
@@ -910,7 +910,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Github copilot:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Copilot")
+(message "Copilot...")
 
 ;; On WSL2, we don't have the right node-version available and therefore
 ;; we have to skip copilot-installation:
@@ -951,7 +951,7 @@
 
 
 ;; magit:
-(message "Magit")
+(message "Magit...")
 (use-package magit
   :ensure t
   :straight t
@@ -973,7 +973,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Different modes for different cases:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Different modes")
+(message "Different modes...")
 (use-package sh-script
   :ensure t
   :straight t
