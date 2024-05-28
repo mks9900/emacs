@@ -1,4 +1,4 @@
-;;; package --- Summary
+;; package --- Summary
 
 ;;; Commentary:
 ;; I use this config on four computers and so there are some cases to handle
@@ -166,7 +166,7 @@
    ((string-equal (system-name) "rocky-ws")
     (set-frame-size (selected-frame) 150 70)
     (set-frame-position (selected-frame) 850 0)
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
+    (set-face-attribute 'default nil :font "Source Code Pro" :height 160)
     )
    ((string-equal (system-name) "macbook13-linux")
     (add-to-list 'default-frame-alist '(fullscreen . maximized))
@@ -495,6 +495,8 @@
 (defvar TeX-view-program-list)
 (defvar LaTeX-item-indent)
 (defvar LaTeX-indent-level-item-continuation)
+(defvar TeX-quote-language-alist)
+(defvar TeX-quote-language)
 
 
 
@@ -552,9 +554,6 @@ environments."
                 LaTeX-indent-environment-list)))
 
 
-
-
-
 (use-package auctex
   :ensure auctex
   :mode ("\\.tex\\'" . latex-mode)
@@ -563,10 +562,15 @@ environments."
   (setq TeX-auto-save t
         TeX-parse-self t
         TeX-master nil  ; Query for the master file
+        TeX-quote-language-alist '(("swedish" "\"" "\"" t))
+        TeX-quote-language "swedish"
         TeX-engine 'xetex)
         ;; LaTeX-item-indent 0
         ;; LaTeX-indent-level-item-continuation 8) ; Default is -2
   ;; (setq LaTeX-item-indent 0) ; Default is -2
+  ;; (setq TeX-quote-language-alist '(("swedish" "\"" "\"" t)))
+  ;; (setq TeX-quote-language "swedish")
+
   (add-hook 'LaTeX-mode-hook 'visual-line-mode)
   (add-hook 'LaTeX-mode-hook 'flyspell-mode)
   (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
@@ -756,12 +760,15 @@ environments."
   ;; (setq helm-display-buffer-height 20) ; Set the fixed height of the Helm window.
 
   ;; Enable fuzzy matching for all Helm commands
-  (setq helm-mode-fuzzy-match t)
-  (setq helm-completion-in-region-fuzzy-match t))
+  ;; (setq helm-mode-fuzzy-match t)
+  ;; (setq helm-completion-in-region-fuzzy-match t))
 
-(helm-mode 1)
+;; (helm-mode 1)
 
-(global-set-key (kbd "C-x C-f") 'helm-find-files)
+;; (global-set-key (kbd "C-x C-f") 'helm-find-files)
+
+;; Sometimes Emacs complains about file-notify being missing, then use polling:
+;; (setq file-notify--library 'polling)
 
 
 (use-package helm-lsp
