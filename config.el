@@ -177,10 +177,14 @@
     (add-to-list 'default-frame-alist '(fullscreen . maximized))
     (set-face-attribute 'default nil :font "Source Code Pro" :height 140)
     )
+   ((string-equal (system-name) "sod-as103403")
+    (set-frame-size (selected-frame) 160 90)
+    ;; (set-frame-position (selected-frame) 100 100)
+    (set-face-attribute 'default nil :font "Source Code Pro" :height 240)
+    )
    )
   )
  )
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Look and feel:
@@ -979,7 +983,7 @@ environments."
 
 ;; On WSL2, we don't have the right node-version available and therefore
 ;; we have to skip copilot-installation:
-(if (not (string-equal (system-name) "SOD-AS104301"))
+(if (not (string-equal (system-name) "SOD-AS104301") or (string-equal (system-name) "sod-as103403"))
     (use-package copilot
       :ensure t
       :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
