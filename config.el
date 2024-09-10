@@ -151,7 +151,7 @@
   (cond
    ((string-equal (system-name) "macbook15-macos.vilanelva.se")
     (add-to-list 'default-frame-alist '(fullscreen . maximized))
-    (set-face-attribute 'default nil :font "Source Cod Pro" :height 180)
+    (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
     )
    )
   )
@@ -593,7 +593,7 @@ environments."
   (cond
    ((eq system-type 'darwin)
     ;; macOS:
-    (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/MacOS/Skim"))))
+    (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/Contents/MacOS/Skim"))))
     ;; (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b"))))
    
    ((eq system-type 'gnu/linux)
