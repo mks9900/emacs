@@ -632,6 +632,17 @@ environments."
 (use-package markdown-preview-mode
   :ensure t)
 
+(defun markdown-export-pdf ()
+  "Export the current Markdown file to PDF using Pandoc."
+  (interactive)
+  (let* ((input-file (buffer-file-name))
+         (output-file (concat (file-name-sans-extension input-file) ".pdf")))
+    (call-process "pandoc" nil nil nil
+                  input-file
+                  "-o" output-file
+                  "--pdf-engine=xelatex"
+                  "-V" "geometry:margin=1in")
+    (message "Exported to %s" output-file)))
 
 ;; Markdown code formatting
 (use-package prettier-js
