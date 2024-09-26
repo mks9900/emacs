@@ -574,7 +574,10 @@ environments."
         TeX-master nil  ; Query for the master file
         TeX-quote-language-alist '(("swedish" "\"" "\"" t))
         TeX-quote-language "swedish"
-        TeX-engine 'xetex)
+        TeX-engine 'xetex
+        TeX-command-extra-options "-shell-escape")
+  ;; (setq LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %S%(PDFout)")))
+  (setq LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %(file-line-error) %(extraopts) %(output-dir) %S%(PDFout)")))
         ;; LaTeX-item-indent 0
         ;; LaTeX-indent-level-item-continuation 8) ; Default is -2
   ;; (setq LaTeX-item-indent 0) ; Default is -2
@@ -588,6 +591,7 @@ environments."
   ;; Use `#'(lambda ...)` for correct lambda syntax
   (add-hook 'TeX-mode-hook #'(lambda () (TeX-fold-mode 1)))
 
+  ;; (setq TeX-command-extra-options "-shell-escape")
   ;; Configure PDF viewers
   (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
   ;; Conditional setting based on OS type
