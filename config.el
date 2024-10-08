@@ -74,6 +74,10 @@
 (add-hook 'markdown-mode-hook 'visual-line-mode)
 
 
+;; Set the width of the line numbers to be fixed, depending
+;; on the number of lines.
+(setq display-line-numbers-width-start t)
+
 ;; Don't produce backup-files:
 (setq
  make-backup-files nil
