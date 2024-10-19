@@ -567,49 +567,66 @@ environments."
                   ("description" LaTeX-indent-item))
                 LaTeX-indent-environment-list)))
 
-
 (use-package auctex
-  :ensure auctex
+  :ensure t
   :mode ("\\.tex\\'" . latex-mode)
   :config
-  ;; AUCTeX configurations
+  ;; Enable automatic saving and parsing of TeX files
   (setq TeX-auto-save t
         TeX-parse-self t
-        TeX-master nil  ; Query for the master file
+        TeX-master nil  ;; Query for the master file
         TeX-quote-language-alist '(("swedish" "\"" "\"" t))
         TeX-quote-language "swedish"
-        TeX-engine 'xetex
-        TeX-command-extra-options "-shell-escape")
-  ;; (setq LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %S%(PDFout)")))
-  (setq LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %(file-line-error) %(extraopts) %(output-dir) %S%(PDFout)")))
-        ;; LaTeX-item-indent 0
-        ;; LaTeX-indent-level-item-continuation 8) ; Default is -2
-  ;; (setq LaTeX-item-indent 0) ; Default is -2
-  ;; (setq TeX-quote-language-alist '(("swedish" "\"" "\"" t)))
-  ;; (setq TeX-quote-language "swedish")
-
-  (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
-  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+        TeX-engine 'xetex)
   
-  ;; Use `#'(lambda ...)` for correct lambda syntax
-  (add-hook 'TeX-mode-hook #'(lambda () (TeX-fold-mode 1)))
-
-  ;; (setq TeX-command-extra-options "-shell-escape")
-  ;; Configure PDF viewers
+  ;; Modify LaTeX command to include -shell-escape for all engines
+  (setq LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %S%(PDFout)")))
+  
+  ;; Optional: Set the PDF viewer (e.g., Skim on macOS, evince on Linux)
   (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-  ;; Conditional setting based on OS type
   (cond
    ((eq system-type 'darwin)
     ;; macOS:
     (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/Contents/MacOS/Skim"))))
-    ;; (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b"))))
-   
    ((eq system-type 'gnu/linux)
     ;; Linux:
-    (setq TeX-view-program-list '(("PDF Viewer" "evince %o"))))
-   )
-  )
+    (setq TeX-view-program-list '(("PDF Viewer" "evince %o")))))
+  
+  ;; Enable useful minor modes
+  (add-hook 'LaTeX-mode-hook 'visual-line-mode)
+  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  
+  ;; Enable parsing of minted package
+  (add-to-list 'LaTeX-verbatim-environments "minted")
+  (add-to-list 'LaTeX-verbatim-macros-with-braces "mintinline"))
+
+;; Ensure -shell-escape is used for compilation
+(eval-after-load 'tex
+  '(progn
+     (assq-delete-all 'output-pdf TeX-command-list)
+     (add-to-list 'TeX-command-list
+                  '("LaTeX" "%`%l%(mode) -shell-escape%' %t" TeX-run-TeX nil t))))
+
+;; Since C-c ` is a little tricky to type on my Swedish keyboard,
+;; I've assigned it to this instead:
+(with-eval-after-load 'tex
+  (define-key TeX-mode-map (kbd "C-c f") 'TeX-next-error))
+
+;; Tell Emacs to treat the minted environment like verbatim
+(require 'latex)
+(add-to-list 'LaTeX-verbatim-environments "minted")
+
+
+;; (defun refresh-latex-font-lock ()
+;;   "Refresh font-lock for LaTeX after minted environment."
+;;   (when (derived-mode-p 'latex-mode)
+;;     (font-lock-refresh-defaults)))
+
+;; (add-hook 'LaTeX-mode-hook
+;;           (lambda ()
+;;             (add-hook 'after-save-hook #'refresh-latex-font-lock nil t)))
+
 
 
 ;; Markdown support:
@@ -1120,7 +1137,6 @@ environments."
   (defun my/json-mode-before-save-hook ()
     (when (eq major-mode 'json-mode)
       (json-pretty-print-buffer)))
-
   (defun my/json-array-of-numbers-on-one-line (encode array)
     "Print the arrays of numbers in one line."
     (let* ((json-encoding-pretty-print
@@ -1128,7 +1144,30 @@ environments."
                  (not (loop for x across array always (numberp x)))))
            (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
       (funcall encode array)))
-  :config (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-one-line))
+  :config 
+  (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-one-line)
+  
+  ;; Define a custom JSON mode that supports C-style comments
+  (define-derived-mode my-json-mode json-mode "JSON with C comments"
+    "Major mode for editing JSON files with C-style comments."
+    (setq-local comment-start "// ")
+    (setq-local comment-end "")
+    (setq-local comment-start-skip "//+\\s-*"))
+
+  ;; Use the custom mode for .json files
+  (add-to-list 'auto-mode-alist '("\\.json\\'" . my-json-mode)))
+
+;; Optional: Add a function to toggle between standard JSON mode and custom JSON mode
+(defun toggle-json-mode ()
+  "Toggle between standard JSON mode and custom JSON mode with C-style comments."
+  (interactive)
+  (if (eq major-mode 'my-json-mode)
+      (json-mode)
+    (my-json-mode))
+  (message "Switched to %s" major-mode))
+
+;; Optional: Bind the toggle function to a key
+(global-set-key (kbd "C-c t j") 'toggle-json-mode)
 
 
 ;;; config.el ends here
