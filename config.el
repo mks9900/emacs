@@ -180,7 +180,7 @@
    ((string-equal (system-name) "sodra-ds-test")
     (set-frame-size (selected-frame) 150 50)
     (set-frame-position (selected-frame) 10 10)
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 160)
+    (set-face-attribute 'default nil :font "Source Code Pro" :height 200)
     )
    ;; WSL is also reported as Linux :-)
    ((string-equal (system-name) "SOD-AS104301")
