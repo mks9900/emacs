@@ -144,57 +144,90 @@
 ;; OS-specifics:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "OS-specifics...")
-
 (defvar mac-right-option-modifier)
 (defvar mac-command-modifier)
+(defvar xdg-bin (getenv "XDG_BIN_HOME"))
+(defvar xdg-cache (getenv "XDG_CACHE_HOME"))
+(defvar xdg-config (getenv "XDG_CONFIG_HOME"))
+
+;; Define a function to set up system-specific GUI settings
+(defun my/setup-system-gui ()
+  "Configure system-specific GUI settings"
+  (when (display-graphic-p)
+    (cond
+     ;; macOS specific
+     ((and (eq system-type 'darwin)
+           (string-equal (system-name) "macbook15-macos.vilanelva.se"))
+      (add-to-list 'default-frame-alist '(fullscreen . maximized))
+      (set-face-attribute 'default nil :font "Source Code Pro" :height 180))
+     
+     ;; Linux specific
+     ((eq system-type 'gnu/linux)
+      (cond
+       ((string-equal (system-name) "rocky-ws")
+        (set-frame-size (selected-frame) 150 70)
+        (set-frame-position (selected-frame) 850 0)
+        (set-face-attribute 'default nil :font "Source Code Pro" :height 160))
+       
+       ((string-equal (system-name) "macbook13-linux")
+        (add-to-list 'default-frame-alist '(fullscreen . maximized))
+        (set-face-attribute 'default nil :font "Source Code Pro" :height 200))
+       
+       ((string-equal (system-name) "sodra-ds-test")
+        (set-frame-size (selected-frame) 150 50)
+        (set-frame-position (selected-frame) 10 10)
+        (set-face-attribute 'default nil :font "Source Code Pro" :height 200))
+       
+       ((string-equal (system-name) "SOD-AS104301")
+        (add-to-list 'default-frame-alist '(fullscreen . maximized))
+        (set-face-attribute 'default nil :font "Source Code Pro" :height 140))
+       
+       ((string-equal (system-name) "sod-as103403")
+        (set-frame-size (selected-frame) 160 90)
+        (set-face-attribute 'default nil :font "Source Code Pro" :height 240)))))))
+
+;; Theme setup function
+(defun my/setup-themes ()
+  "Set up themes based on display type."
+  (message "Setting up themes...")
+  (mapc #'disable-theme custom-enabled-themes)
+  (if (display-graphic-p)
+      (progn
+        (load-theme 'doom-material t))
+    (progn
+      (load-theme 'tango t)
+      ;; Make the highlighted line more visible in terminal mode
+      (set-face-background 'hl-line "gray75")  ; Adjust this color as needed
+      ;; Optional: also adjust the foreground if needed
+      (set-face-foreground 'hl-line nil)  ; nil means "keep the original text color"
+      ;; Ensure the highlighting doesn't override text colors
+      (set-face-attribute 'hl-line nil :inherit nil)
+      ;; Fix Vertico's current selection face for terminal
+      (with-eval-after-load 'vertico
+        (set-face-background 'vertico-current "gray75")
+        ;; Optional: ensure text remains readable
+        (set-face-attribute 'vertico-current nil :inherit nil)))))
+ 
+
+;; Set up non-GUI specific settings immediately
 (cond
  ((eq system-type 'darwin)
   ;; macOS keybinding-fixes:
   (setq mac-right-option-modifier 'nil)
   (setq mac-command-modifier 'control
-        select-enable-clipboard t)
-  (cond
-   ((string-equal (system-name) "macbook15-macos.vilanelva.se")
-    (add-to-list 'default-frame-alist '(fullscreen . maximized))
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 180)
-    )
-   )
-  )
+        select-enable-clipboard t)))
 
- ;; Linux-specific configurations
- ((eq system-type 'gnu/linux)
-  (defvar xdg-bin (getenv "XDG_BIN_HOME"))
-  (defvar xdg-cache (getenv "XDG_CACHE_HOME"))
-  (defvar xdg-config (getenv "XDG_CONFIG_HOME"))
+;; Set up hooks to run at the right time
+(add-hook 'after-init-hook #'my/setup-themes)
+(add-hook 'window-setup-hook #'my/setup-system-gui)
 
-  (cond
-   ((string-equal (system-name) "rocky-ws")
-    (set-frame-size (selected-frame) 150 70)
-    (set-frame-position (selected-frame) 850 0)
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 160)
-    )
-   ((string-equal (system-name) "macbook13-linux")
-    (add-to-list 'default-frame-alist '(fullscreen . maximized))
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 200)
-    )
-   ((string-equal (system-name) "sodra-ds-test")
-    (set-frame-size (selected-frame) 150 50)
-    (set-frame-position (selected-frame) 10 10)
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 200)
-    )
-   ;; WSL is also reported as Linux :-)
-   ((string-equal (system-name) "SOD-AS104301")
-    (add-to-list 'default-frame-alist '(fullscreen . maximized))
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 140)
-    )
-   ((string-equal (system-name) "sod-as103403")
-    (set-frame-size (selected-frame) 160 90)
-    ;; (set-frame-position (selected-frame) 100 100)
-    (set-face-attribute 'default nil :font "Source Code Pro" :height 240)
-    )
-   )
-  )
- )
+;; For daemon mode, also set up GUI settings when creating new frames
+(add-hook 'after-make-frame-functions
+          (lambda (frame)
+            (with-selected-frame frame
+              (my/setup-themes)
+              (my/setup-system-gui))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Look and feel:
@@ -256,7 +289,6 @@
 (setq mouse-wheel-progressive-speed nil)
 
 
-;; Set a nice theme:
 ;; (straight-use-package 'material-theme)
 ;; (load-theme 'material t)
 
@@ -284,40 +316,11 @@
 
 
 ;; Below is a one-liner to suppress a warning...
-(defvar doom-themes-treemacs-theme)
-
-(use-package doom-themes
-  :ensure t
-  :config
-  ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-material t)
-
-  ;; Enable flashing mode-line on errors
-  (doom-themes-visual-bell-config)
-  ;; Enable custom neotree theme (all-the-icons must be installed!)
-  (doom-themes-neotree-config)
-  
-  ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config)
-
-  ;; Ensure this is set after doom-themes has been loaded
-  (with-eval-after-load 'doom-themes
-    (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
-    (doom-themes-treemacs-config)))
+;; (defvar doom-themes-treemacs-theme)
 
 
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode 1)
-  (setq doom-modeline-height 25)
-  (setq doom-modeline-icon t)
-  (setq doom-modeline-lsp t)
-  (setq doom-modeline-env-version t)
-  ;; (setq doom-modeline-env-enable-python t)
-  ;; (setq doom-modeline-env-python-executable "python-shell-interpreter") ; was: "python" or `python-shell-interpreter'
-  )
+;; Ensure themes are available
+;; (use-package doom-themes :ensure t)
 
 
 (use-package rainbow-delimiters
