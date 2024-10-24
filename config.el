@@ -33,8 +33,8 @@
 
 ;; Not necessary since Emacs >= 29?
 ;; (unless (package-installed-p 'use-package)
-  ;; (package-refresh-contents)
-  ;; (package-install 'use-package))
+;; (package-refresh-contents)
+;; (package-install 'use-package))
 
 
 ;; Bootstrap straight:
@@ -58,6 +58,13 @@
 ;; Integrates `straight' directly into the `use-package' package through the `:straight' expression.
 (straight-use-package 'use-package)
 ;; (setq straight-check-for-modifications '(find-when-checking))
+
+
+(use-package unicode-fonts
+  :ensure t
+  :config
+  (unicode-fonts-setup))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -114,12 +121,56 @@
 (defun comment-or-uncomment-line-or-region ()
   "Comments or uncomments the current line or region."
   (interactive)
-  (if (region-active-p)
-      (comment-or-uncomment-region (region-beginning) (region-end))
-    (comment-or-uncomment-region (line-beginning-position) (line-end-position))
-    )
-  )
+  (let* ((start (if (region-active-p)
+                    (region-beginning)
+                  (line-beginning-position)))
+         (end (if (region-active-p)
+                  (region-end)
+                (line-end-position)))
+         (line-text (buffer-substring-no-properties start end)))
+    (if (derived-mode-p 'json-mode)
+        ;; For JSON modes, manually handle // comments
+        (save-excursion
+          (goto-char start)
+          (if (string-match-p "^[ \t]*//" line-text)
+              ;; Remove comment
+              (while (re-search-forward "^[ \t]*//" end t)
+                (replace-match "" nil nil))
+            ;; Add comment
+            (while (< (point) end)
+              (unless (looking-at "^[ \t]*//")
+                (beginning-of-line)
+                (insert "// "))
+              (forward-line 1))))
+      ;; For other modes, use standard comment function
+      (comment-or-uncomment-region start end))))
+
 (global-set-key (kbd "C-1") 'comment-or-uncomment-line-or-region)
+
+
+(defun indent-buffer-smart ()
+  "Indent buffer while preserving point and window position.
+Also handles various cleanup tasks like removing trailing whitespace."
+  (interactive)
+  ;; Remember window position
+  (let ((window-start (window-start)))
+    ;; Remember cursor position
+    (let ((current-point (point)))
+      ;; Indent and cleanup
+      (save-excursion
+        (delete-trailing-whitespace)
+        (indent-region (point-min) (point-max) nil)
+        (untabify (point-min) (point-max)))
+      ;; Restore cursor and window position
+      (goto-char current-point)
+      (set-window-start (selected-window) window-start))
+    (message "Buffer indented and cleaned up!"))
+  ;; Flash modeline to indicate completion
+  (force-mode-line-update)
+  (sit-for 0.5))
+
+(global-set-key (kbd "C-2") 'indent-buffer-smart)
+
 
 
 ;; Always show linenumbers in the left margin:
@@ -160,7 +211,7 @@
            (string-equal (system-name) "macbook15-macos.vilanelva.se"))
       (add-to-list 'default-frame-alist '(fullscreen . maximized))
       (set-face-attribute 'default nil :font "Source Code Pro" :height 180))
-     
+
      ;; Linux specific
      ((eq system-type 'gnu/linux)
       (cond
@@ -168,20 +219,16 @@
         (set-frame-size (selected-frame) 150 70)
         (set-frame-position (selected-frame) 850 0)
         (set-face-attribute 'default nil :font "Source Code Pro" :height 160))
-       
+
        ((string-equal (system-name) "macbook13-linux")
         (add-to-list 'default-frame-alist '(fullscreen . maximized))
         (set-face-attribute 'default nil :font "Source Code Pro" :height 200))
-       
+
        ((string-equal (system-name) "sodra-ds-test")
         (set-frame-size (selected-frame) 150 50)
         (set-frame-position (selected-frame) 10 10)
         (set-face-attribute 'default nil :font "Source Code Pro" :height 200))
-       
-       ((string-equal (system-name) "SOD-AS104301")
-        (add-to-list 'default-frame-alist '(fullscreen . maximized))
-        (set-face-attribute 'default nil :font "Source Code Pro" :height 140))
-       
+
        ((string-equal (system-name) "sod-as103403")
         (set-frame-size (selected-frame) 160 90)
         (set-face-attribute 'default nil :font "Source Code Pro" :height 240)))))))
@@ -207,7 +254,7 @@
         (set-face-background 'vertico-current "gray75")
         ;; Optional: ensure text remains readable
         (set-face-attribute 'vertico-current nil :inherit nil)))))
- 
+
 
 ;; Set up non-GUI specific settings immediately
 (cond
@@ -256,7 +303,7 @@
 ;; Show filename in title:
 (setq frame-title-format
       (list (format "%s %%S: %%j " (system-name))
-        '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
+            '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
 
 ;; Make commented text stand out better:
@@ -273,11 +320,11 @@
   (setq dimmer-fraction 0.40)
   (setq dimmer-delay 0.5) ; Adjust the delay in seconds
 
-  
+
   ;; Exclude some buffers from being dimmed
   (add-to-list 'dimmer-exclusion-regexp-list "^\*helm")
   (add-to-list 'dimmer-exclusion-regexp-list "^\*Minibuf")
-  
+
   ;; Configure and activate dimmer
   (dimmer-configure-which-key)
   (dimmer-configure-magit)
@@ -467,7 +514,7 @@
 ;;   ;; macOS:
 ;;   (setenv "DICPATH" "/Users/johanthor/Library/Spelling:")
 ;;   )
- 
+
 ;;  ;; Linux-specific configurations
 ;;  ((eq system-type 'gnu/linux)
 ;;   (setenv "DICPATH" "/home/johanthor/.local/share/spelling:")
@@ -550,8 +597,8 @@
                             contin
                           offset))))
                  indent))
-             ((looking-at (concat re-end re-env "}"))
-              indent)
+            ((looking-at (concat re-end re-env "}"))
+             indent)
             ((looking-at "\\\\item")
              (+ offset indent))
             (t
@@ -581,10 +628,10 @@ environments."
         TeX-quote-language-alist '(("swedish" "\"" "\"" t))
         TeX-quote-language "swedish"
         TeX-engine 'xetex)
-  
+
   ;; Modify LaTeX command to include -shell-escape for all engines
   (setq LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %S%(PDFout)")))
-  
+
   ;; Optional: Set the PDF viewer (e.g., Skim on macOS, evince on Linux)
   (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
   (cond
@@ -594,12 +641,12 @@ environments."
    ((eq system-type 'gnu/linux)
     ;; Linux:
     (setq TeX-view-program-list '(("PDF Viewer" "evince %o")))))
-  
+
   ;; Enable useful minor modes
   (add-hook 'LaTeX-mode-hook 'visual-line-mode)
   (add-hook 'LaTeX-mode-hook 'flyspell-mode)
   (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-  
+
   ;; Enable parsing of minted package
   (add-to-list 'LaTeX-verbatim-environments "minted")
   (add-to-list 'LaTeX-verbatim-macros-with-braces "mintinline"))
@@ -633,7 +680,7 @@ environments."
 
 
 ;; Markdown support:
-  
+
 (use-package markdown-mode
   :ensure t
   :commands (markdown-mode gfm-mode)
@@ -646,7 +693,7 @@ environments."
    ((eq system-type 'darwin)
     ;; macOS:
     (setq markdown-command "/usr/local/bin/pandoc"))
-   
+
    ;; Linux-specific configurations
    ((eq system-type 'gnu/linux)
     (setq markdown-command "/usr/bin/pandoc"))
@@ -690,7 +737,7 @@ environments."
     ;; macOS:
     (setq lsp-latex-texlab-executable "/usr/local/bin/texlab")
     )
-   
+
    ;; Linux-specific configurations
    ((eq system-type 'gnu/linux)
     (setq lsp-latex-texlab-executable "/home/johanthor/.cargo/bin/texlab")
@@ -717,7 +764,7 @@ environments."
   ;;   ;; macOS:
   ;;   (math-preview-command "/usr/local/bin/math-preview")
   ;;   )
-   
+
   ;;  ;; Linux-specific configurations
   ;;  ((eq system-type 'gnu/linux)
   ;;   (math-preview-command "/usr/local/bin/math-preview")
@@ -812,365 +859,451 @@ environments."
   ;; (setq helm-mode-fuzzy-match t)
   ;; (setq helm-completion-in-region-fuzzy-match t))
 
-;; (helm-mode 1)
+  ;; (helm-mode 1)
 
-;; (global-set-key (kbd "C-x C-f") 'helm-find-files)
+  ;; (global-set-key (kbd "C-x C-f") 'helm-find-files)
 
-;; Sometimes Emacs complains about file-notify being missing, then use polling:
-;; (setq file-notify--library 'polling)
-
-
-(use-package helm-lsp
-  :ensure t
-  :commands helm-lsp-workspace-symbol)
+  ;; Sometimes Emacs complains about file-notify being missing, then use polling:
+  ;; (setq file-notify--library 'polling)
 
 
-(use-package lsp-treemacs
-  :ensure t
-  :commands lsp-treemacs-errors-list)
+  (use-package helm-lsp
+    :ensure t
+    :commands helm-lsp-workspace-symbol)
 
 
-;; Use flycheck to check code:
-(use-package flycheck
-  :straight t
-  :ensure t
-  :init (global-flycheck-mode)
-  :hook (after-init . global-flycheck-mode)
-  ;; How can this be set on a per project way?
-  ;; It seems flake8 doesn't support this?
-  :config
-  (cond
-   ((eq system-type 'darwin)
-    (setq flycheck-flake8rc "/Users/johanthor/.config/flake8"))
-   ((eq system-type 'gnu/linux)
-    (setq flycheck-flake8rc "/home/johanthor/.config/flake8"))
-   )
-  )
-
-;; tip to automatically set the correct interpreter:
-(defun my/set-flycheck-python-interpreter ()
-  "Set Flycheck Python interpreter to the one specified by pyenv."
-  (let ((pyenv-path (executable-find "python")))
-    (setq-local flycheck-python-pyflakes-executable pyenv-path)
-    (setq-local flycheck-python-flake8-executable pyenv-path)))
-
-(add-hook 'python-mode-hook #'my/set-flycheck-python-interpreter)
+  (use-package lsp-treemacs
+    :ensure t
+    :commands lsp-treemacs-errors-list)
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Python-section:
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Python-specifics...")
+  ;; Use flycheck to check code:
+  (use-package flycheck
+    :straight t
+    :ensure t
+    :init (global-flycheck-mode)
+    :hook (after-init . global-flycheck-mode)
+    ;; How can this be set on a per project way?
+    ;; It seems flake8 doesn't support this?
+    :config
+    (cond
+     ((eq system-type 'darwin)
+      (setq flycheck-flake8rc "/Users/johanthor/.config/flake8"))
+     ((eq system-type 'gnu/linux)
+      (setq flycheck-flake8rc "/home/johanthor/.config/flake8"))
+     )
+    )
 
-;; Pyenv:
-(use-package pyenv-mode
-  :ensure t
-  :init
-  (add-to-list 'exec-path "~/.pyenv/shims")
-  :config
-  (pyenv-mode))
+  ;; tip to automatically set the correct interpreter:
+  (defun my/set-flycheck-python-interpreter ()
+    "Set Flycheck Python interpreter to the one specified by pyenv."
+    (let ((pyenv-path (executable-find "python")))
+      (setq-local flycheck-python-pyflakes-executable pyenv-path)
+      (setq-local flycheck-python-flake8-executable pyenv-path)))
 
-(when (executable-find "pyenv")
-  (setenv "PYENV_ROOT" (replace-regexp-in-string "\n" "" (shell-command-to-string "pyenv root")))
-  (add-to-list 'exec-path (concat (getenv "PYENV_ROOT") "/shims")))
-
-(add-hook 'python-mode-hook 'pyenv-mode)
-(global-set-key (kbd "C-c C-s") 'pyenv-mode-set) ; Set key binding to switch pyenv environments
-
-
-;; Indentation guides
-(use-package indent-bars
-  :straight (indent-bars :type git :host github :repo "jdtsmith/indent-bars")
-  :custom
-  (indent-bars-treesit-support t)
-  (indent-bars-no-descend-string t)
-   (indent-bars-treesit-ignore-blank-lines-types '("module"))
-   (indent-bars-treesit-wrap '((python argument_list parameters ; for python, as an example
-       			              list list_comprehension
-       			              dictionary dictionary_comprehension
-       			              parenthesized_expression subscript)))
-  :config
-  (setq
-   indent-bars-color '(highlight :face-bg t :blend 0.3)
-   indent-bars-prefer-character 1
-   ;; indent-bars-pattern ".*.*.*.*"
-   indent-bars-width-frac 0.9
-   indent-bars-pad-frac 0.2
-   indent-bars-zigzag 0.1
-   indent-bars-color-by-depth '(:palette ("red" "green" "orange" "cyan") :blend 1)
-   indent-bars-highlight-current-depth '(:blend 0.5))
-  :hook
-  ((python-base-mode) . indent-bars-mode))
-
-
-
-
-;; ;; Experimental elpy integration...
-;; (use-package elpy
-;;   :ensure t
-;;   :init
-;;   (elpy-enable))
-
-
-;; (use-package exec-path-from-shell
-;;   :ensure t
-;;   :config
-;;   (exec-path-from-shell-initialize))
-
-
-;; ;; what do set here?
-;; ;; (setq elpy-rpc-python-command "python3")
-;; ;; (setq python-shell-interpreter "python3")
-
-;; ;; (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-;; ;; (add-hook 'elpy-mode-hook 'flycheck-mode)
-
-
-;; (defun my/elpy-set-python-interpreter ()
-;;   "Set the Python interpreter for elpy based on the active pyenv version."
-;;   (let ((pyenv-version-name (pyenv-mode-version)))
-;;     (when pyenv-version-name
-;;       (setq elpy-rpc-python-command (concat "~/.pyenv/versions/" pyenv-version-name "/bin/python"))
-;;       (setq python-shell-interpreter elpy-rpc-python-command))))
-
-;; (add-hook 'pyenv-mode-hook 'my/elpy-set-python-interpreter)
-
-
-;; ;; find a .python-version and activate it...
-;; (defun my/activate-pyenv-virtualenv ()
-;;   "Automatically activate the virtualenv that matches the .python-version."
-;;   (let ((pyenv-version (pyenv-mode-version)))
-;;     (when pyenv-version
-;;       (pyvenv-activate (concat "~/.pyenv/versions/" pyenv-version)))))
-
-;; (add-hook 'python-mode-hook 'my/activate-pyenv-virtualenv)
-
-
-;; (defun my/pyvenv-activate-pyenv ()
-;;   "Activate a pyenv virtual environment by selecting from a list of available pyenv environments."
-;;   (interactive)
-;;   (let* ((root "~/.pyenv/versions") ; Adjust if your pyenv versions are stored elsewhere
-;;          (envs (mapcar (lambda (dir)
-;;                          (substring dir (length root) (length dir)))
-;;                        (directory-files root t directory-files-no-dot-files-regexp)))
-;;          (chosen-env (completing-read "Choose pyenv environment: " envs)))
-;;     (pyvenv-activate (expand-file-name chosen-env root))))
-
-;; (global-set-key (kbd "C-c M-p") 'my/pyvenv-activate-pyenv)
-
-
-
-
-
-;; ;;; end elpy experiment
-
-
-
-
-;; Misc Python goodies:
-(use-package buftra
-  :ensure t
-  :straight (:host github :repo "humitos/buftra.el"))
-
-
-(use-package py-pyment
-  :ensure t
-  :straight (:host github :repo "humitos/py-cmd-buffer.el")
-  :config
-  (setq py-pyment-options '("--output=numpydoc")))
-
-
-;; py-isort below seems to depend on this:
-(use-package projectile
-  :ensure t
-  :config
-  (projectile-mode +1)
-  ;; Set up your preferred keymap prefix, e.g., "C-c p"
-  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
-
-
-(use-package py-isort
-  :ensure t
-  :straight (:host github :repo "humitos/py-cmd-buffer.el")
-  :hook (python-mode . py-isort-enable-on-save)
-  :config
-  (setq py-isort-options '("--lines=88" "-m=3" "-tc" "-fgw=0" "-ca")))
-
-
-(use-package py-autoflake
-  :ensure t
-  :straight (:host github :repo "humitos/py-cmd-buffer.el")
-  :hook (python-mode . py-autoflake-enable-on-save)
-  :config
-  (setq py-autoflake-options '("--expand-star-imports")))
-
-
-(use-package py-docformatter
-  :ensure t
-  :straight (:host github :repo "humitos/py-cmd-buffer.el")
-  :hook (python-mode . py-docformatter-enable-on-save)
-  :config
-  (setq py-docformatter-options '("--wrap-summaries=88" "--pre-summary-newline")))
-
-
-(use-package blacken
-  :straight t
-  :hook (python-mode . blacken-mode)
-  :config
-  (setq blacken-line-length '88))
-
-
-(use-package py-isort
-  :straight t
-  :hook ((before-save . py-isort-before-save)
-         (python-mode . py-isort-enable-on-save))
-  :config
-  (setq py-isort-options '("-l=88" "--profile=black")))
+  (add-hook 'python-mode-hook #'my/set-flycheck-python-interpreter)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Github copilot:
+  ;; Python-section:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Copilot...")
+  (message "Python-specifics...")
 
-;; On WSL2, we don't have the right node-version available and therefore
-;; we have to skip copilot-installation:
-(if (not (string-equal (system-name) "SOD-AS104301") or (string-equal (system-name) "sod-as103403"))
-    (use-package copilot
-      :ensure t
-      :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
-      :hook ((python-mode . copilot-mode)
-             (markdown-mode . copilot-mode)
-             (emacs-lisp-mode . copilot-mode)
-             (latex-mode . copilot-mode))
-      :config
-      (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
-      (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
-      (define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
-      (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line))
+  ;; Pyenv:
+  (use-package pyenv-mode
+    :ensure t
+    :init
+    (add-to-list 'exec-path "~/.pyenv/shims")
+    :config
+    (pyenv-mode))
 
-  ;; Fix warnings about assignment to free variables:
-  (defvar ac-disable-inline)
-  (defvar ac-candidate-menu-min)
+  (when (executable-find "pyenv")
+    (setenv "PYENV_ROOT" (replace-regexp-in-string "\n" "" (shell-command-to-string "pyenv root")))
+    (add-to-list 'exec-path (concat (getenv "PYENV_ROOT") "/shims")))
 
-  ;; complete by copilot first, then auto-complete:
-  (defun my-tab ()
-    "Complete by copilot first, then auto-complete."
-    (interactive)
-    (or (copilot-accept-completion-by-word)
-        (ac-expand nil)))
+  (add-hook 'python-mode-hook 'pyenv-mode)
+  (global-set-key (kbd "C-c C-s") 'pyenv-mode-set) ; Set key binding to switch pyenv environments
 
-  (with-eval-after-load 'auto-complete
+
+  ;; Indentation guides
+  (use-package indent-bars
+    :straight (indent-bars :type git :host github :repo "jdtsmith/indent-bars")
+    :custom
+    (indent-bars-treesit-support t)
+    (indent-bars-no-descend-string t)
+    (indent-bars-treesit-ignore-blank-lines-types '("module"))
+    (indent-bars-treesit-wrap '((python argument_list parameters ; for python, as an example
+                                        list list_comprehension
+                                        dictionary dictionary_comprehension
+                                        parenthesized_expression subscript)))
+    :config
+    (setq
+     indent-bars-color '(highlight :face-bg t :blend 0.3)
+     indent-bars-prefer-character 1
+     ;; indent-bars-pattern ".*.*.*.*"
+     indent-bars-width-frac 0.9
+     indent-bars-pad-frac 0.2
+     indent-bars-zigzag 0.1
+     indent-bars-color-by-depth '(:palette ("red" "green" "orange" "cyan") :blend 1)
+     indent-bars-highlight-current-depth '(:blend 0.5))
+    :hook
+    ((python-base-mode) . indent-bars-mode))
+
+
+
+
+  ;; ;; Experimental elpy integration...
+  ;; (use-package elpy
+  ;;   :ensure t
+  ;;   :init
+  ;;   (elpy-enable))
+
+
+  ;; (use-package exec-path-from-shell
+  ;;   :ensure t
+  ;;   :config
+  ;;   (exec-path-from-shell-initialize))
+
+
+  ;; ;; what do set here?
+  ;; ;; (setq elpy-rpc-python-command "python3")
+  ;; ;; (setq python-shell-interpreter "python3")
+
+  ;; ;; (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+  ;; ;; (add-hook 'elpy-mode-hook 'flycheck-mode)
+
+
+  ;; (defun my/elpy-set-python-interpreter ()
+  ;;   "Set the Python interpreter for elpy based on the active pyenv version."
+  ;;   (let ((pyenv-version-name (pyenv-mode-version)))
+  ;;     (when pyenv-version-name
+  ;;       (setq elpy-rpc-python-command (concat "~/.pyenv/versions/" pyenv-version-name "/bin/python"))
+  ;;       (setq python-shell-interpreter elpy-rpc-python-command))))
+
+  ;; (add-hook 'pyenv-mode-hook 'my/elpy-set-python-interpreter)
+
+
+  ;; ;; find a .python-version and activate it...
+  ;; (defun my/activate-pyenv-virtualenv ()
+  ;;   "Automatically activate the virtualenv that matches the .python-version."
+  ;;   (let ((pyenv-version (pyenv-mode-version)))
+  ;;     (when pyenv-version
+  ;;       (pyvenv-activate (concat "~/.pyenv/versions/" pyenv-version)))))
+
+  ;; (add-hook 'python-mode-hook 'my/activate-pyenv-virtualenv)
+
+
+  ;; (defun my/pyvenv-activate-pyenv ()
+  ;;   "Activate a pyenv virtual environment by selecting from a list of available pyenv environments."
+  ;;   (interactive)
+  ;;   (let* ((root "~/.pyenv/versions") ; Adjust if your pyenv versions are stored elsewhere
+  ;;          (envs (mapcar (lambda (dir)
+  ;;                          (substring dir (length root) (length dir)))
+  ;;                        (directory-files root t directory-files-no-dot-files-regexp)))
+  ;;          (chosen-env (completing-read "Choose pyenv environment: " envs)))
+  ;;     (pyvenv-activate (expand-file-name chosen-env root))))
+
+  ;; (global-set-key (kbd "C-c M-p") 'my/pyvenv-activate-pyenv)
+
+
+
+
+
+  ;; ;;; end elpy experiment
+
+
+
+
+  ;; Misc Python goodies:
+  (use-package buftra
+    :ensure t
+    :straight (:host github :repo "humitos/buftra.el"))
+
+
+  (use-package py-pyment
+    :ensure t
+    :straight (:host github :repo "humitos/py-cmd-buffer.el")
+    :config
+    (setq py-pyment-options '("--output=numpydoc")))
+
+
+  ;; py-isort below seems to depend on this:
+  (use-package projectile
+    :ensure t
+    :config
+    (projectile-mode +1)
+    ;; Set up your preferred keymap prefix, e.g., "C-c p"
+    (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
+
+
+  (use-package py-isort
+    :ensure t
+    :straight (:host github :repo "humitos/py-cmd-buffer.el")
+    :hook (python-mode . py-isort-enable-on-save)
+    :config
+    (setq py-isort-options '("--lines=88" "-m=3" "-tc" "-fgw=0" "-ca")))
+
+
+  (use-package py-autoflake
+    :ensure t
+    :straight (:host github :repo "humitos/py-cmd-buffer.el")
+    :hook (python-mode . py-autoflake-enable-on-save)
+    :config
+    (setq py-autoflake-options '("--expand-star-imports")))
+
+
+  (use-package py-docformatter
+    :ensure t
+    :straight (:host github :repo "humitos/py-cmd-buffer.el")
+    :hook (python-mode . py-docformatter-enable-on-save)
+    :config
+    (setq py-docformatter-options '("--wrap-summaries=88" "--pre-summary-newline")))
+
+
+  (use-package blacken
+    :straight t
+    :hook (python-mode . blacken-mode)
+    :config
+    (setq blacken-line-length '88))
+
+
+  (use-package py-isort
+    :straight t
+    :hook ((before-save . py-isort-before-save)
+           (python-mode . py-isort-enable-on-save))
+    :config
+    (setq py-isort-options '("-l=88" "--profile=black")))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Github copilot:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  (message "Copilot...")
+
+  ;; On WSL2, we don't have the right node-version available and therefore
+  ;; we have to skip copilot-installation:
+  (if (not (string-equal (system-name) "SOD-AS104301") or (string-equal (system-name) "sod-as103403"))
+      (use-package copilot
+        :ensure t
+        :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
+        :hook ((python-mode . copilot-mode)
+               (markdown-mode . copilot-mode)
+               (emacs-lisp-mode . copilot-mode)
+               (latex-mode . copilot-mode))
+        :config
+        (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+        (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
+        (define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
+        (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line))
+
+    ;; Fix warnings about assignment to free variables:
+    (defvar ac-disable-inline)
+    (defvar ac-candidate-menu-min)
+
+    ;; complete by copilot first, then auto-complete:
+    (defun my-tab ()
+      "Complete by copilot first, then auto-complete."
+      (interactive)
+      (or (copilot-accept-completion-by-word)
+          (ac-expand nil)))
+
+    (with-eval-after-load 'auto-complete
                                         ; disable inline preview
-    (setq ac-disable-inline t)
+      (setq ac-disable-inline t)
                                         ; show menu if have only one candidate
-    (setq ac-candidate-menu-min 0))
+      (setq ac-candidate-menu-min 0))
 
-  (with-eval-after-load 'company
-    ;; disable inline previews
-    (delq 'company-preview-if-just-one-frontend company-frontends)))
+    (with-eval-after-load 'company
+      ;; disable inline previews
+      (delq 'company-preview-if-just-one-frontend company-frontends)))
 
 
-;; magit:
-(message "Magit...")
-(use-package magit
-  :ensure t
-  :straight t
-  :diminish magit-auto-revert-mode
-  :diminish auto-revert-mode
-  :bind (("C-c g" . #'magit-status))
-  :custom
-  (magit-repository-directories '(("~/code" . 1)))
-  :config
-  (add-to-list 'magit-no-confirm 'stage-all-changes))
+  ;; magit:
+  (message "Magit...")
+  (use-package magit
+    :ensure t
+    :straight t
+    :diminish magit-auto-revert-mode
+    :diminish auto-revert-mode
+    :bind (("C-c g" . #'magit-status))
+    :custom
+    (magit-repository-directories '(("~/code" . 1)))
+    :config
+    (add-to-list 'magit-no-confirm 'stage-all-changes))
 
-(use-package magit-filenotify
-  :ensure t
-  :straight t
-  :commands (magit-filenotify-mode)
-  :hook (magit-status-mode . magit-filenotify-mode))
+  (use-package magit-filenotify
+    :ensure t
+    :straight t
+    :commands (magit-filenotify-mode)
+    :hook (magit-status-mode . magit-filenotify-mode))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Different modes for different cases:
+  ;; Different modes for different cases:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Different modes...")
-(use-package sh-script
-  :ensure t
-  :straight t
-  :delight "δ"
-  :hook (after-save . executable-make-buffer-file-executable-if-script-p))
+  (message "Different modes...")
+  (use-package sh-script
+    :ensure t
+    :straight t
+    :delight "δ"
+    :hook (after-save . executable-make-buffer-file-executable-if-script-p))
 
-;; Enable company mode in shell scripts
-(defun my-shell-script-mode-setup ()
+  ;; Enable company mode in shell scripts
+  (defun my-shell-script-mode-setup ()
 
-  (Company-Mode 1)) ; Enable Company-Mode
+    (Company-Mode 1)) ; Enable Company-Mode
 
-(Add-Hook 'Sh-Mode-Hook #'My-shell-script-mode-setup)
-
-
-(use-package csv-mode
-  :ensure t
-  :mode ("\\.\\(csv\\|tsv\\)\\'"))
-(add-hook 'csv-mode-hook (lambda () (flyspell-mode -1)))
+  (Add-Hook 'Sh-Mode-Hook #'My-shell-script-mode-setup)
 
 
-(use-package dockerfile-mode
-  :ensure t
-  :delight "δ"
-  :mode "Dockerfile\\'")
+  (use-package csv-mode
+    :ensure t
+    :mode ("\\.\\(csv\\|tsv\\)\\'"))
+  (add-hook 'csv-mode-hook (lambda () (flyspell-mode -1)))
 
 
-(use-package yaml-mode
-  :ensure t)
+  (use-package dockerfile-mode
+    :ensure t
+    :delight "δ"
+    :mode "Dockerfile\\'")
 
 
-(use-package toml-mode
-  :ensure t)
+  (use-package yaml-mode
+    :ensure t)
 
 
-;; json:
-(use-package json-mode
-  :straight t
-  :ensure t
-  :delight "J"
-  :mode "\\.json\\'"
-  :hook (before-save . my/json-mode-before-save-hook)
-  :preface
-  (defun my/json-mode-before-save-hook ()
-    (when (eq major-mode 'json-mode)
-      (json-pretty-print-buffer)))
-  (defun my/json-array-of-numbers-on-one-line (encode array)
-    "Print the arrays of numbers in one line."
-    (let* ((json-encoding-pretty-print
-            (and json-encoding-pretty-print
-                 (not (loop for x across array always (numberp x)))))
-           (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
-      (funcall encode array)))
-  :config 
-  (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-one-line)
-  
-  ;; Define a custom JSON mode that supports C-style comments
-  (define-derived-mode my-json-mode json-mode "JSON with C comments"
-    "Major mode for editing JSON files with C-style comments."
-    (setq-local comment-start "// ")
-    (setq-local comment-end "")
-    (setq-local comment-start-skip "//+\\s-*"))
+  (use-package toml-mode
+    :ensure t)
 
-  ;; Use the custom mode for .json files
-  (add-to-list 'auto-mode-alist '("\\.json\\'" . my-json-mode)))
 
-;; Optional: Add a function to toggle between standard JSON mode and custom JSON mode
-(defun toggle-json-mode ()
-  "Toggle between standard JSON mode and custom JSON mode with C-style comments."
-  (interactive)
-  (if (eq major-mode 'my-json-mode)
-      (json-mode)
-    (my-json-mode))
-  (message "Switched to %s" major-mode))
+  ;; json:
+  ;; JSON configuration
+  (use-package json-mode
+    :straight t
+    :ensure t
+    :delight "J"
+    :mode (("\\.json\\'" . my-json-mode)
+           ("\\.jsonc\\'" . my-jsonc-mode)
+           ("\\.json5\\'" . my-jsonc-mode))
+    :hook ((json-mode . my/json-mode-setup)
+           (before-save . my/json-mode-before-save-hook))
+    :preface
+    (defun my/json-mode-setup ()
+      "Setup function for JSON modes."
+      (make-local-variable 'js-indent-level)
+      (setq js-indent-level 2)
+      (setq-local indent-tabs-mode nil))
 
-;; Optional: Bind the toggle function to a key
-(global-set-key (kbd "C-c t j") 'toggle-json-mode)
+    (defun my/json-mode-before-save-hook ()
+      "Format JSON buffer before saving, if in a JSON mode."
+      (when (derived-mode-p 'json-mode)
+        (when (not (bound-and-true-p my-json-format-disabled))
+          (json-pretty-print-buffer))))
+
+    (defun my/json-array-of-numbers-on-one-line (encode array)
+      "Print arrays of numbers in one line."
+      (let* ((json-encoding-pretty-print
+              (and json-encoding-pretty-print
+                   (not (cl-loop for x across array always (numberp x)))))
+             (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
+        (funcall encode array)))
+
+    (defun my/toggle-json-format-on-save ()
+      "Toggle JSON formatting on save."
+      (interactive)
+      (setq-local my-json-format-disabled (not (bound-and-true-p my-json-format-disabled)))
+      (message "JSON format on save %s" (if my-json-format-disabled "disabled" "enabled")))
+
+    :config
+    (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-line)
+
+    ;; Base JSON mode with comments
+    (define-derived-mode my-json-mode json-mode "JSON"
+      "Major mode for editing JSON files."
+      (setq-local indent-tabs-mode nil)
+      (setq-local js-indent-level 2))
+
+    ;; JSONC mode (JSON with Comments)
+    (define-derived-mode my-jsonc-mode my-json-mode "JSONC"
+      "Major mode for editing JSON files with C-style comments."
+      (setq-local comment-start "// ")
+      (setq-local comment-end "")
+      (setq-local comment-start-skip "//+\\s-*")
+      ;; Enable comment-dwim to work with // comments
+      (setq-local comment-use-syntax t)
+      ;; Add support for block comments
+      (modify-syntax-entry ?/ ". 124b" syntax-table)
+      (modify-syntax-entry ?* ". 23" syntax-table)
+      (modify-syntax-entry ?\n "> b" syntax-table))
+
+    ;; Key bindings
+    (define-key json-mode-map (kbd "C-c C-t") 'my/toggle-json-format-on-save)
+    (define-key json-mode-map (kbd "C-c C-f") 'json-pretty-print-buffer))
+
+  ;; Optional: Add json-navigator for better JSON navigation
+  (use-package json-navigator
+    :straight t
+    :after json-mode)
+
+  ;; Optional: Add prettier support for formatting
+  (use-package prettier
+    :straight t
+    :hook ((json-mode . prettier-mode)
+           (my-jsonc-mode . prettier-mode)))
+
+
+
+
+
+
+
+
+
+
+
+
+  ;; (use-package json-mode
+  ;;   :straight t
+  ;;   :ensure t
+  ;;   :delight "J"
+  ;;   :mode "\\.json\\'"
+  ;;   :hook (before-save . my/json-mode-before-save-hook)
+  ;;   :preface
+  ;;   (defun my/json-mode-before-save-hook ()
+  ;;     (when (eq major-mode 'json-mode)
+  ;;       (json-pretty-print-buffer)))
+  ;;   (defun my/json-array-of-numbers-on-one-line (encode array)
+  ;;     "Print the arrays of numbers in one line."
+  ;;     (let* ((json-encoding-pretty-print
+  ;;             (and json-encoding-pretty-print
+  ;;                  (not (loop for x across array always (numberp x)))))
+  ;;            (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
+  ;;       (funcall encode array)))
+  ;;   :config
+  ;;   (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-one-line)
+
+  ;;   ;; Define a custom JSON mode that supports C-style comments
+  ;;   (define-derived-mode my-json-mode json-mode "JSON with C comments"
+  ;;     "Major mode for editing JSON files with C-style comments."
+  ;;     (setq-local comment-start "// ")
+  ;;     (setq-local comment-end "")
+  ;;     (setq-local comment-start-skip "//+\\s-*"))
+
+  ;;   ;; Use the custom mode for .json files
+  ;;   (add-to-list 'auto-mode-alist '("\\.json\\'" . my-json-mode)))
+  ;;   (add-to-list 'auto-mode-alist '("\\.jsonc\\'" . my-json-mode)))
+
+  ;; ;; Optional: Add a function to toggle between standard JSON mode and custom JSON mode
+  ;; (defun toggle-json-mode ()
+  ;;   "Toggle between standard JSON mode and custom JSON mode with C-style comments."
+  ;;   (interactive)
+  ;;   (if (eq major-mode 'my-json-mode)
+  ;;       (json-mode)
+  ;;     (my-json-mode))
+  ;;   (message "Switched to %s" major-mode))
+
+  ;; ;; Optional: Bind the toggle function to a key
+  ;; (global-set-key (kbd "C-c t j") 'toggle-json-mode)
 
 
 ;;; config.el ends here

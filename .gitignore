@@ -25,6 +25,7 @@ projectile*
 url/
 # Backup files
 *~
+var/
 
 # Undo-tree save-files
 *.~undo-tree
