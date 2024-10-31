@@ -55,12 +55,6 @@
 ;; (setq straight-check-for-modifications '(find-when-checking))
 
 
-(use-package unicode-fonts
-  :ensure t
-  :config
-  (unicode-fonts-setup))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global settings
@@ -233,7 +227,8 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (mapc #'disable-theme custom-enabled-themes)
   (if (display-graphic-p)
       (progn
-        (load-theme 'doom-material t))
+        ;; (load-theme 'doom-material t))
+        (load-theme 'ef-owl t))
     (progn
       (load-theme 'tango t)
       ;; Make the highlighted line more visible in terminal mode
@@ -1065,7 +1060,87 @@ environments."
 
 
 ;; JSON configuration
-(require 'cl-lib)
+;; (require 'cl-lib)
+
+;; (use-package json-mode
+;;   :straight t
+;;   :ensure t
+;;   :delight "J"
+;;   :mode (("\\.json\\'" . my-json-mode)
+;;          ("\\.jsonc\\'" . my-jsonc-mode)
+;;          ("\\.json5\\'" . my-jsonc-mode))
+;;   :hook ((json-mode . my/json-mode-setup)
+;;          (before-save . my/json-mode-before-save-hook))
+;;   :preface
+;;   (defun my/json-mode-setup ()
+;;     "Setup function for JSON modes."
+;;     (make-local-variable 'js-indent-level)
+;;     (setq js-indent-level 2)
+;;     (setq-local indent-tabs-mode nil))
+
+;;   (defun my/json-mode-before-save-hook ()
+;;     "Format JSON buffer before saving, if in a JSON mode."
+;;     (when (derived-mode-p 'json-mode)
+;;       (when (not (bound-and-true-p my-json-format-disabled))
+;;         (json-pretty-print-buffer))))
+
+;;   ;; Suspicious package cl is deprecated-cause?
+;;   (defun my/json-array-of-numbers-on-one-line (encode array)
+;;   "Print arrays of numbers in one line."
+;;   (let* ((json-encoding-pretty-print
+;;           (and json-encoding-pretty-print
+;;                (not (cl-every #'numberp array)))) ; Using cl-every instead of cl-loop
+;;          (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
+;;     (funcall encode array)))
+  
+
+;;   (defun my/toggle-json-format-on-save ()
+;;     "Toggle JSON formatting on save."
+;;     (interactive)
+;;     (setq-local my-json-format-disabled (not (bound-and-true-p my-json-format-disabled)))
+;;     (message "JSON format on save %s" (if my-json-format-disabled "disabled" "enabled")))
+
+;;   :config
+;;   ;; (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-line)
+;;   (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-one-line)
+
+;;   ;; Base JSON mode with comments
+;;   (define-derived-mode my-json-mode json-mode "JSON"
+;;     "Major mode for editing JSON files."
+;;     (setq-local indent-tabs-mode nil)
+;;     (setq-local js-indent-level 2))
+
+;;   ;; JSONC mode (JSON with Comments)
+;;   (define-derived-mode my-jsonc-mode my-json-mode "JSONC"
+;;     "Major mode for editing JSON files with C-style comments."
+;;     (setq-local comment-start "// ")
+;;     (setq-local comment-end "")
+;;     (setq-local comment-start-skip "//+\\s-*")
+;;     ;; Enable comment-dwim to work with // comments
+;;     (setq-local comment-use-syntax t)
+;;     ;; Add support for block comments
+;;     (modify-syntax-entry ?/ ". 124b" syntax-table)
+;;     (modify-syntax-entry ?* ". 23" syntax-table)
+;;     (modify-syntax-entry ?\n "> b" syntax-table))
+
+;;   ;; Key bindings
+;;   (define-key json-mode-map (kbd "C-c C-t") 'my/toggle-json-format-on-save)
+;;   (define-key json-mode-map (kbd "C-c C-f") 'json-pretty-print-buffer))
+
+;; ;; Optional: Add json-navigator for better JSON navigation
+;; (use-package json-navigator
+;;   :straight t
+;;   :after json-mode)
+
+;; ;; Optional: Add prettier support for formatting
+;; (use-package prettier
+;;   :straight t
+;;   :hook ((json-mode . prettier-mode)
+;;          (my-jsonc-mode . prettier-mode)))
+
+
+
+
 
 (use-package json-mode
   :straight t
@@ -1089,22 +1164,18 @@ environments."
       (when (not (bound-and-true-p my-json-format-disabled))
         (json-pretty-print-buffer))))
 
-  ;; Suspicious package cl is deprecated-cause?
   (defun my/json-array-of-numbers-on-one-line (encode array)
-  "Print arrays of numbers in one line."
-  (let* ((json-encoding-pretty-print
-          (and json-encoding-pretty-print
-               (not (cl-every #'numberp array)))) ; Using cl-every instead of cl-loop
-         (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
-    (funcall encode array)))
-  
-  ;; (defun my/json-array-of-numbers-on-one-line (encode array)
-  ;;   "Print arrays of numbers in one line."
-  ;;   (let* ((json-encoding-pretty-print
-  ;;           (and json-encoding-pretty-print
-  ;;                (not (cl-loop for x across array always (numberp x)))))
-  ;;          (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
-  ;;     (funcall encode array)))
+    "Print arrays of numbers in one line."
+    (let* ((is-all-numbers (catch 'not-all-numbers
+                            (dotimes (i (length array))
+                              (unless (numberp (aref array i))
+                                (throw 'not-all-numbers nil)))
+                            t))
+           (json-encoding-pretty-print
+            (and json-encoding-pretty-print
+                 (not is-all-numbers)))
+           (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
+      (funcall encode array)))
 
   (defun my/toggle-json-format-on-save ()
     "Toggle JSON formatting on save."
@@ -1113,7 +1184,6 @@ environments."
     (message "JSON format on save %s" (if my-json-format-disabled "disabled" "enabled")))
 
   :config
-  ;; (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-line)
   (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-one-line)
 
   ;; Base JSON mode with comments
@@ -1128,27 +1198,21 @@ environments."
     (setq-local comment-start "// ")
     (setq-local comment-end "")
     (setq-local comment-start-skip "//+\\s-*")
-    ;; Enable comment-dwim to work with // comments
     (setq-local comment-use-syntax t)
-    ;; Add support for block comments
     (modify-syntax-entry ?/ ". 124b" syntax-table)
     (modify-syntax-entry ?* ". 23" syntax-table)
     (modify-syntax-entry ?\n "> b" syntax-table))
 
-  ;; Key bindings
   (define-key json-mode-map (kbd "C-c C-t") 'my/toggle-json-format-on-save)
   (define-key json-mode-map (kbd "C-c C-f") 'json-pretty-print-buffer))
 
-;; Optional: Add json-navigator for better JSON navigation
 (use-package json-navigator
   :straight t
   :after json-mode)
 
-;; Optional: Add prettier support for formatting
 (use-package prettier
   :straight t
   :hook ((json-mode . prettier-mode)
          (my-jsonc-mode . prettier-mode)))
-
 
 ;;; config.el ends here
