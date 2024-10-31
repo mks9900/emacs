@@ -25,16 +25,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set repositories to use:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Loading packages...")
+(message "0. Loading packages...")
 
 (setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 
-
-;; Not necessary since Emacs >= 29?
-;; (unless (package-installed-p 'use-package)
-;; (package-refresh-contents)
-;; (package-install 'use-package))
 
 
 ;; Bootstrap straight:
@@ -60,13 +55,6 @@
 ;; (setq straight-check-for-modifications '(find-when-checking))
 
 
-(setq warning-minimum-level :emergency)
-(require 'cl)
-(setq warning-minimum-level :warning)
-
-
-
-
 (use-package unicode-fonts
   :ensure t
   :config
@@ -77,7 +65,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global settings
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Applying global settings...")
+(message "1. Applying global settings...")
 ;; Always use utf-8:
 (set-charset-priority 'unicode)
 (prefer-coding-system 'utf-8-unix)
@@ -97,10 +85,6 @@
  make-backup-files nil
  auto-save-default nil
  create-lockfiles nil)
-
-
-(defvar python-indent-offset)
-(setq python-indent-offset 4)
 
 
 ;; Stop Emacs from hiding:
@@ -155,6 +139,7 @@
 (global-set-key (kbd "C-1") 'comment-or-uncomment-line-or-region)
 
 
+;; Create a function to indent buffers:
 (defun indent-buffer-smart ()
   "Indent buffer while preserving point and window position.
 Also handles various cleanup tasks like removing trailing whitespace."
@@ -201,7 +186,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OS-specifics:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "OS-specifics...")
+(message "2. OS-specifics...")
 (defvar mac-right-option-modifier)
 (defvar mac-command-modifier)
 (defvar xdg-bin (getenv "XDG_BIN_HOME"))
@@ -240,10 +225,11 @@ Also handles various cleanup tasks like removing trailing whitespace."
         (set-frame-size (selected-frame) 160 90)
         (set-face-attribute 'default nil :font "Source Code Pro" :height 240)))))))
 
+
 ;; Theme setup function
 (defun my/setup-themes ()
   "Set up themes based on display type."
-  (message "Setting up themes...")
+  (message "3. Setting up themes...")
   (mapc #'disable-theme custom-enabled-themes)
   (if (display-graphic-p)
       (progn
@@ -286,7 +272,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Look and feel:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Look and feel...")
+(message "4. Look and feel...")
 (custom-set-variables
  '(blink-cursor-mode nil)
  '(menu-bar-mode nil)
@@ -343,9 +329,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (setq mouse-wheel-progressive-speed nil)
 
 
-;; (straight-use-package 'material-theme)
-;; (load-theme 'material t)
-
 ;; Install icons:
 (use-package all-the-icons
   :ensure t)
@@ -369,14 +352,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :hook (marginalia-mode . all-the-icons-completion-marginalia-setup))
 
 
-;; Below is a one-liner to suppress a warning...
-;; (defvar doom-themes-treemacs-theme)
-
-
-;; Ensure themes are available
-;; (use-package doom-themes :ensure t)
-
-
 (use-package rainbow-delimiters
   :straight t
   :ensure t
@@ -393,7 +368,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Misc settings:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Misc settings...")
+(message "5. Misc settings...")
 (setq-default
  ad-redefinition-action 'accept                      ; Silence warnings for redefinition
  cursor-in-non-selected-windows t                    ; Hide the cursor in inactive windows
@@ -426,7 +401,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Addons and customisations:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Addons and customisations...")
+(message "6. Addons and customisations...")
 
 (global-set-key (kbd "C-x 2") 'split-window-below)
 (global-set-key (kbd "C-x 3") 'split-window-right)
@@ -515,19 +490,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
   ;; Set the default dictionaries
   (setq ispell-dictionary "en_GB,sv_SE"))
 
-;; Isn't this set in .zshrc?
-;; (cond
-;;  ((eq system-type 'darwin)
-;;   ;; macOS:
-;;   (setenv "DICPATH" "/Users/johanthor/Library/Spelling:")
-;;   )
-
-;;  ;; Linux-specific configurations
-;;  ((eq system-type 'gnu/linux)
-;;   (setenv "DICPATH" "/home/johanthor/.local/share/spelling:")
-;;   )
-;;  )
-
 
 ;; Function to switch dictionaries:
 (defun switch-dictionary-between-swedish-and-english ()
@@ -543,21 +505,10 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (global-set-key (kbd "<f8>") 'switch-dictionary-between-swedish-and-english) ; Bind to F8 key
 
 
-;; ;; Decide which modes to spellcheck:
-;; (dolist (hook '(text-mode-hook
-;;                 markdown-mode-hook
-;;                 latex-mode-hook))
-;;                 ;; python-mode-hook)) ; Add other modes as needed.
-;;   (add-hook hook (lambda () (flyspell-mode 1))))
-
-;; ;; Use below to not spellcheck code:
-;; (dolist (hook '(python-mode-hook)) ; Add other programming modes as needed.
-;;   (add-hook hook (lambda () (flyspell-prog-mode))))
-
 
 ;; LaTeX support:
 
-(message "LaTeX...")
+(message "7. LaTeX...")
 (defvar TeX-auto-save)
 (defvar TeX-parse-self)
 (defvar TeX-master)
@@ -675,63 +626,6 @@ environments."
 (add-to-list 'LaTeX-verbatim-environments "minted")
 
 
-;; (defun refresh-latex-font-lock ()
-;;   "Refresh font-lock for LaTeX after minted environment."
-;;   (when (derived-mode-p 'latex-mode)
-;;     (font-lock-refresh-defaults)))
-
-;; (add-hook 'LaTeX-mode-hook
-;;           (lambda ()
-;;             (add-hook 'after-save-hook #'refresh-latex-font-lock nil t)))
-
-
-
-;; Markdown support:
-
-(use-package markdown-mode
-  :ensure t
-  :commands (markdown-mode gfm-mode)
-  :mode (("README\\.md\\'" . gfm-mode)
-         ("\\.md\\'" . markdown-mode)
-         ("\\.markdown\\'" . markdown-mode))
-  :init
-  ;; Pandoc is located at different places:
-  (cond
-   ((eq system-type 'darwin)
-    ;; macOS:
-    (setq markdown-command "/usr/local/bin/pandoc"))
-
-   ;; Linux-specific configurations
-   ((eq system-type 'gnu/linux)
-    (setq markdown-command "/usr/bin/pandoc"))
-   )
-  :hook (markdown-mode . lsp-deferred)
-  :config
-  (require 'lsp-marksman)
-  )
-
-
-(use-package markdown-preview-mode
-  :ensure t)
-
-(defun markdown-export-pdf ()
-  "Export the current Markdown file to PDF using Pandoc."
-  (interactive)
-  (let* ((input-file (buffer-file-name))
-         (output-file (concat (file-name-sans-extension input-file) ".pdf")))
-    (call-process "pandoc" nil nil nil
-                  input-file
-                  "-o" output-file
-                  "--pdf-engine=xelatex"
-                  "-V" "geometry:margin=1in")
-    (message "Exported to %s" output-file)))
-
-;; Markdown code formatting
-(use-package prettier-js
-  :ensure t
-  :hook (markdown-mode . prettier-js-mode))
-
-
 (use-package lsp-latex
   :ensure t
   :hook ((LaTeX-mode . lsp)  ;; or (TeX-mode . lsp) for some setups
@@ -780,8 +674,54 @@ environments."
   )
 
 
+;; Markdown support:
+(use-package markdown-mode
+  :ensure t
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init
+  ;; Pandoc is located at different places:
+  (cond
+   ((eq system-type 'darwin)
+    ;; macOS:
+    (setq markdown-command "/usr/local/bin/pandoc"))
+
+   ;; Linux-specific configurations
+   ((eq system-type 'gnu/linux)
+    (setq markdown-command "/usr/bin/pandoc"))
+   )
+  :hook (markdown-mode . lsp-deferred)
+  :config
+  (require 'lsp-marksman)
+  )
+
+
+(use-package markdown-preview-mode
+  :ensure t)
+
+(defun markdown-export-pdf ()
+  "Export the current Markdown file to PDF using Pandoc."
+  (interactive)
+  (let* ((input-file (buffer-file-name))
+         (output-file (concat (file-name-sans-extension input-file) ".pdf")))
+    (call-process "pandoc" nil nil nil
+                  input-file
+                  "-o" output-file
+                  "--pdf-engine=xelatex"
+                  "-V" "geometry:margin=1in")
+    (message "Exported to %s" output-file)))
+
+;; Markdown code formatting
+(use-package prettier-js
+  :ensure t
+  :hook (markdown-mode . prettier-js-mode))
+
+
+
 ;; Use LSP:
-(message "LSP...")
+(message "8. LSP...")
 (defvar lsp-pyright-venv-path)
 (defvar lsp-pyright-auto-search-paths)
 (defvar lsp-pyright-use-library-code-for-types)
@@ -914,7 +854,7 @@ environments."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python-section:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Python-specifics...")
+(message "9. Python-specifics...")
 
 ;; Pyenv:
 (use-package pyenv-mode
@@ -930,6 +870,10 @@ environments."
 
 (add-hook 'python-mode-hook 'pyenv-mode)
 (global-set-key (kbd "C-c C-s") 'pyenv-mode-set) ; Set key binding to switch pyenv environments
+
+
+(defvar python-indent-offset)
+(setq python-indent-offset 4)
 
 
 ;; Indentation guides
@@ -955,69 +899,6 @@ environments."
    indent-bars-highlight-current-depth '(:blend 0.5))
   :hook
   ((python-base-mode) . indent-bars-mode))
-
-
-
-
-;; ;; Experimental elpy integration...
-;; (use-package elpy
-;;   :ensure t
-;;   :init
-;;   (elpy-enable))
-
-
-;; (use-package exec-path-from-shell
-;;   :ensure t
-;;   :config
-;;   (exec-path-from-shell-initialize))
-
-
-;; ;; what do set here?
-;; ;; (setq elpy-rpc-python-command "python3")
-;; ;; (setq python-shell-interpreter "python3")
-
-;; ;; (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-;; ;; (add-hook 'elpy-mode-hook 'flycheck-mode)
-
-
-;; (defun my/elpy-set-python-interpreter ()
-;;   "Set the Python interpreter for elpy based on the active pyenv version."
-;;   (let ((pyenv-version-name (pyenv-mode-version)))
-;;     (when pyenv-version-name
-;;       (setq elpy-rpc-python-command (concat "~/.pyenv/versions/" pyenv-version-name "/bin/python"))
-;;       (setq python-shell-interpreter elpy-rpc-python-command))))
-
-;; (add-hook 'pyenv-mode-hook 'my/elpy-set-python-interpreter)
-
-
-;; ;; find a .python-version and activate it...
-;; (defun my/activate-pyenv-virtualenv ()
-;;   "Automatically activate the virtualenv that matches the .python-version."
-;;   (let ((pyenv-version (pyenv-mode-version)))
-;;     (when pyenv-version
-;;       (pyvenv-activate (concat "~/.pyenv/versions/" pyenv-version)))))
-
-;; (add-hook 'python-mode-hook 'my/activate-pyenv-virtualenv)
-
-
-;; (defun my/pyvenv-activate-pyenv ()
-;;   "Activate a pyenv virtual environment by selecting from a list of available pyenv environments."
-;;   (interactive)
-;;   (let* ((root "~/.pyenv/versions") ; Adjust if your pyenv versions are stored elsewhere
-;;          (envs (mapcar (lambda (dir)
-;;                          (substring dir (length root) (length dir)))
-;;                        (directory-files root t directory-files-no-dot-files-regexp)))
-;;          (chosen-env (completing-read "Choose pyenv environment: " envs)))
-;;     (pyvenv-activate (expand-file-name chosen-env root))))
-
-;; (global-set-key (kbd "C-c M-p") 'my/pyvenv-activate-pyenv)
-
-
-
-
-
-;; ;;; end elpy experiment
-
 
 
 
@@ -1126,7 +1007,7 @@ environments."
 
 
 ;; magit:
-(message "Magit...")
+(message "10. Magit...")
 (use-package magit
   :ensure t
   :straight t
@@ -1148,7 +1029,7 @@ environments."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Different modes for different cases:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "Different modes...")
+(message "11. Different modes...")
 (use-package sh-script
   :ensure t
   :straight t
@@ -1183,8 +1064,9 @@ environments."
   :ensure t)
 
 
-;; json:
 ;; JSON configuration
+(require 'cl-lib)
+
 (use-package json-mode
   :straight t
   :ensure t
@@ -1209,12 +1091,20 @@ environments."
 
   ;; Suspicious package cl is deprecated-cause?
   (defun my/json-array-of-numbers-on-one-line (encode array)
-    "Print arrays of numbers in one line."
-    (let* ((json-encoding-pretty-print
-            (and json-encoding-pretty-print
-                 (not (cl-loop for x across array always (numberp x)))))
-           (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
-      (funcall encode array)))
+  "Print arrays of numbers in one line."
+  (let* ((json-encoding-pretty-print
+          (and json-encoding-pretty-print
+               (not (cl-every #'numberp array)))) ; Using cl-every instead of cl-loop
+         (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
+    (funcall encode array)))
+  
+  ;; (defun my/json-array-of-numbers-on-one-line (encode array)
+  ;;   "Print arrays of numbers in one line."
+  ;;   (let* ((json-encoding-pretty-print
+  ;;           (and json-encoding-pretty-print
+  ;;                (not (cl-loop for x across array always (numberp x)))))
+  ;;          (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
+  ;;     (funcall encode array)))
 
   (defun my/toggle-json-format-on-save ()
     "Toggle JSON formatting on save."
@@ -1223,7 +1113,8 @@ environments."
     (message "JSON format on save %s" (if my-json-format-disabled "disabled" "enabled")))
 
   :config
-  (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-line)
+  ;; (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-line)
+  (advice-add 'json-encode-array :around #'my/json-array-of-numbers-on-one-line)
 
   ;; Base JSON mode with comments
   (define-derived-mode my-json-mode json-mode "JSON"
