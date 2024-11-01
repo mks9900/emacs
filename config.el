@@ -204,20 +204,20 @@ Also handles various cleanup tasks like removing trailing whitespace."
        ((string-equal (system-name) "rocky-ws")
         (set-frame-size (selected-frame) 150 70)
         (set-frame-position (selected-frame) 850 0)
-        (set-face-attribute 'default nil :font "Source Code Pro" :height 160))
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 160))
 
        ((string-equal (system-name) "macbook13-linux")
         (add-to-list 'default-frame-alist '(fullscreen . maximized))
-        (set-face-attribute 'default nil :font "Source Code Pro" :height 200))
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 200))
 
        ((string-equal (system-name) "sodra-ds-test")
         (set-frame-size (selected-frame) 150 50)
         (set-frame-position (selected-frame) 10 10)
-        (set-face-attribute 'default nil :font "Source Code Pro" :height 200))
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 200))
 
        ((string-equal (system-name) "sod-as103403")
         (set-frame-size (selected-frame) 160 90)
-        (set-face-attribute 'default nil :font "Source Code Pro" :height 240)))))))
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 240)))))))
 
 
 ;; Theme setup function
