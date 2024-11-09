@@ -65,11 +65,6 @@
 (prefer-coding-system 'utf-8-unix)
 
 
-;; Apply line wrapping only to text and markdown:
-(add-hook 'text-mode-hook 'visual-line-mode)
-(add-hook 'markdown-mode-hook 'visual-line-mode)
-
-
 ;; Set the width of the line numbers to be fixed, depending
 ;; on the number of lines.
 (setq display-line-numbers-width-start t)
@@ -268,6 +263,36 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;; Look and feel:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "4. Look and feel...")
+
+
+
+
+;; For text files: auto-fill for actual line breaks at 79 chars
+(setq-default fill-column 79)
+(add-hook 'text-mode-hook (lambda ()
+                           (auto-fill-mode 1)
+                           (display-fill-column-indicator-mode 1)))
+
+;; For programming modes: visual-line-mode for soft wrapping
+(add-hook 'prog-mode-hook (lambda ()
+                           (visual-line-mode 1)
+                           (display-fill-column-indicator-mode 1)))
+
+;; Keep column indicator globally available but let modes enable it
+(setq-default display-fill-column-indicator-column 79)
+
+
+
+
+
+
+
+
+
+
+
+
+
 (custom-set-variables
  '(blink-cursor-mode nil)
  '(menu-bar-mode nil)
@@ -368,7 +393,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
  ad-redefinition-action 'accept                      ; Silence warnings for redefinition
  cursor-in-non-selected-windows t                    ; Hide the cursor in inactive windows
  display-time-default-load-average nil               ; Don't display load average
- fill-column 88                                      ; Set width for automatic line breaks
  help-window-select t                                ; Focus new help windows when opened
  indent-tabs-mode nil                                ; Prefer spaces over tabs
  inhibit-startup-screen t                            ; Disable start-up screen
@@ -691,6 +715,10 @@ environments."
   :config
   (require 'lsp-marksman)
   )
+
+(add-hook 'markdown-mode-hook (lambda ()
+                                (visual-line-mode 1)
+                                (display-fill-column-indicator-mode 1)))
 
 
 (use-package markdown-preview-mode
@@ -1025,6 +1053,91 @@ environments."
 ;; Different modes for different cases:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "11. Different modes...")
+
+;; Code added by Claude! :-)
+;; Text mode settings
+(add-hook 'text-mode-hook
+          (lambda ()
+            ;; Basic formatting
+            (auto-fill-mode 1)                          ; Auto wrap at fill-column
+            (display-fill-column-indicator-mode 1)      ; Show the fill column
+            (display-line-numbers-mode 1)               ; Show line numbers
+            
+            ;; Spelling
+            (flyspell-mode 1)                          ; Enable spell checking
+            
+            ;; Sentences
+            (setq-local sentence-end-double-space nil) ; Don't require double space after periods
+            
+            ;; Paragraphs
+            (setq-local paragraph-start "\f\\|[ \t]*$\\|[ \t]*[-+*] ")  ; Better paragraph detection
+            (setq-local paragraph-separate "[ \t\f]*$")
+            
+            ;; Navigation and editing
+            (show-paren-mode 1)                        ; Highlight matching parentheses
+            (electric-pair-local-mode 1)               ; Auto-close parentheses, quotes, etc.
+            
+            ;; Word wrap settings
+            (setq-local word-wrap t)                   ; Wrap at word boundaries
+            (setq-local truncate-lines nil)            ; Enable line wrapping
+            
+            ;; Indentation
+            (setq-local tab-width 4)                   ; Set tab width
+            (setq-local indent-tabs-mode nil)))        ; Use spaces instead of tabs
+
+;; Better word count
+(use-package wc-mode
+  :ensure t
+  :hook (text-mode . wc-mode))
+
+;; Enhanced text navigation
+(use-package avy
+  :ensure t
+  :bind (("C-:" . avy-goto-char)
+         ("C-'" . avy-goto-char-2)))
+
+;; Multiple cursors for text editing
+(use-package multiple-cursors
+  :ensure t
+  :bind (("C-c m c" . mc/edit-lines)
+         ("C->" . mc/mark-next-like-this)
+         ("C-<" . mc/mark-previous-like-this)))
+
+
+;; ;; Function to auto-fill entire buffer
+;; (defun auto-fill-buffer ()
+;;   "Fill all paragraphs in the buffer."
+;;   (interactive)
+;;   (let ((fill-column (or fill-column 79)))
+;;     (fill-region (point-min) (point-max))))
+
+;; ;; Add to text-mode-hook to format when opening files
+;; (add-hook 'text-mode-hook
+;;           (lambda ()
+;;             ;; Your existing text-mode settings here...
+            
+;;             ;; Auto-fill mode for new typing
+;;             (auto-fill-mode 1)
+            
+;;             ;; Format existing content when opening file
+;;             (auto-fill-buffer)))
+
+
+;; Define command to format the whole buffer
+(defun format-text-buffer ()
+  "Format all paragraphs in the current buffer to respect fill-column."
+  (interactive)
+  (save-excursion
+    (mark-whole-buffer)
+    (fill-region (region-beginning) (region-end)))
+  (message "Buffer formatted to %d columns" fill-column))
+
+;; Bind it to a key if you want
+(global-set-key (kbd "C-c q") 'format-text-buffer)
+
+
+
+
 (use-package sh-script
   :ensure t
   :straight t
@@ -1092,7 +1205,7 @@ environments."
 ;;                (not (cl-every #'numberp array)))) ; Using cl-every instead of cl-loop
 ;;          (json-encoding-separator (if json-encoding-pretty-print "," ", ")))
 ;;     (funcall encode array)))
-  
+
 
 ;;   (defun my/toggle-json-format-on-save ()
 ;;     "Toggle JSON formatting on save."
@@ -1167,10 +1280,10 @@ environments."
   (defun my/json-array-of-numbers-on-one-line (encode array)
     "Print arrays of numbers in one line."
     (let* ((is-all-numbers (catch 'not-all-numbers
-                            (dotimes (i (length array))
-                              (unless (numberp (aref array i))
-                                (throw 'not-all-numbers nil)))
-                            t))
+                             (dotimes (i (length array))
+                               (unless (numberp (aref array i))
+                                 (throw 'not-all-numbers nil)))
+                             t))
            (json-encoding-pretty-print
             (and json-encoding-pretty-print
                  (not is-all-numbers)))
