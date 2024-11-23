@@ -30,3 +30,5 @@ var/
 # Undo-tree save-files
 *.~undo-tree
 
+# local llm through ollama/ellama:
+ellama-sessions/
