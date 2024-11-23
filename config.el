@@ -1020,6 +1020,7 @@ environments."
 
 
 ;; Local llms with ellama!
+(message "10. ellama...")
 (use-package ellama
   :bind ("C-c l" . ellama-transient-main-menu)
   :init
@@ -1076,7 +1077,7 @@ environments."
 
 
 ;; magit:
-(message "10. Magit...")
+(message "11. Magit...")
 (use-package magit
   :ensure t
   :straight t
@@ -1098,7 +1099,7 @@ environments."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Different modes for different cases:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "11. Different modes...")
+(message "12. Different modes...")
 
 ;; Code added by Claude! :-)
 ;; Text mode settings
