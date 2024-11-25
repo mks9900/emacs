@@ -197,7 +197,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
      ((eq system-type 'gnu/linux)
       (cond
        ((string-equal (system-name) "rocky-ws")
-        (set-frame-size (selected-frame) 150 70)
+        (set-frame-size (selected-frame) 100 70)
         (set-frame-position (selected-frame) 850 0)
         (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 160))
 
@@ -206,9 +206,9 @@ Also handles various cleanup tasks like removing trailing whitespace."
         (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 200))
 
        ((string-equal (system-name) "sodra-ds-test")
-        (set-frame-size (selected-frame) 150 50)
+        (set-frame-size (selected-frame) 100 50)
         (set-frame-position (selected-frame) 10 10)
-        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 200))
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 180))
 
        ((string-equal (system-name) "sod-as103403")
         (set-frame-size (selected-frame) 160 90)
