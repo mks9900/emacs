@@ -1031,49 +1031,49 @@ environments."
   ;; could be llm-openai for example
   (require 'llm-ollama)
   (setopt ellama-provider
-	    (make-llm-ollama
-	     ;; this model should be pulled to use it
-	     ;; value should be the same as you print in terminal during pull
-	     :chat-model "llama3.1:8b-instruct-q8_0"
-	     :embedding-model "nomic-embed-text"
-	     :default-chat-non-standard-params '(("num_ctx" . 8192))))
+          (make-llm-ollama
+           ;; this model should be pulled to use it
+           ;; value should be the same as you print in terminal during pull
+           :chat-model "llama3.1:8b-instruct-q8_0"
+           :embedding-model "nomic-embed-text"
+           :default-chat-non-standard-params '(("num_ctx" . 8192))))
   (setopt ellama-summarization-provider
-	    (make-llm-ollama
-	     :chat-model "qwen2.5-coder:3b"
-	     :embedding-model "nomic-embed-text"
-	     :default-chat-non-standard-params '(("num_ctx" . 32768))))
+          (make-llm-ollama
+           :chat-model "qwen2.5-coder:3b"
+           :embedding-model "nomic-embed-text"
+           :default-chat-non-standard-params '(("num_ctx" . 32768))))
   (setopt ellama-coding-provider
-	    (make-llm-ollama
-	     :chat-model "qwen2.5-coder:3b"
-	     :embedding-model "nomic-embed-text"
-	     :default-chat-non-standard-params '(("num_ctx" . 32768))))
+          (make-llm-ollama
+           :chat-model "qwen2.5-coder:3b"
+           :embedding-model "nomic-embed-text"
+           :default-chat-non-standard-params '(("num_ctx" . 32768))))
   ;; Predefined llm providers for interactive switching.
   ;; You shouldn't add ollama providers here - it can be selected interactively
   ;; without it. It is just example.
   (setopt ellama-providers
-	    '(("llama" . (make-llm-ollama
-			   :chat-model "llama3.1:8b-instruct-q8_0"
-			   :embedding-model "llama3.1:8b-instruct-q8_0"))
-	      ("mistral" . (make-llm-ollama
-			    :chat-model "mistral:7b-instruct-v0.2-q6_K"
-			    :embedding-model "mistral:7b-instruct-v0.2-q6_K"))
-	      ("mixtral" . (make-llm-ollama
-			    :chat-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"
-			    :embedding-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"))))
+          '(("llama" . (make-llm-ollama
+                        :chat-model "llama3.1:8b-instruct-q8_0"
+                        :embedding-model "llama3.1:8b-instruct-q8_0"))
+            ("mistral" . (make-llm-ollama
+                          :chat-model "mistral:7b-instruct-v0.2-q6_K"
+                          :embedding-model "mistral:7b-instruct-v0.2-q6_K"))
+            ("mixtral" . (make-llm-ollama
+                          :chat-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"
+                          :embedding-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"))))
   ;; Naming new sessions with llm
   (setopt ellama-naming-provider
-	    (make-llm-ollama
-	     :chat-model "llama3.1:8b-instruct-q8_0"
-	     :embedding-model "nomic-embed-text"
-	     :default-chat-non-standard-params '(("stop" . ("\n")))))
+          (make-llm-ollama
+           :chat-model "llama3.1:8b-instruct-q8_0"
+           :embedding-model "nomic-embed-text"
+           :default-chat-non-standard-params '(("stop" . ("\n")))))
   (setopt ellama-naming-scheme 'ellama-generate-name-by-llm)
   ;; Translation llm provider
   (setopt ellama-translation-provider
-	  (make-llm-ollama
-	   :chat-model "qwen2.5-coder:3b"
-	   :embedding-model "nomic-embed-text"
-	   :default-chat-non-standard-params
-	   '(("num_ctx" . 32768)))))
+          (make-llm-ollama
+           :chat-model "qwen2.5-coder:3b"
+           :embedding-model "nomic-embed-text"
+           :default-chat-non-standard-params
+           '(("num_ctx" . 32768)))))
 
 
 ;; magit:
