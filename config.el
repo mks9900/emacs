@@ -197,11 +197,8 @@ Also handles various cleanup tasks like removing trailing whitespace."
      ((eq system-type 'gnu/linux)
       (cond
        ((string-equal (system-name) "rocky-ws")
-<<<<<<< HEAD
         (set-frame-size (selected-frame) 100 70)
-=======
         (set-frame-size (selected-frame) 120 70)
->>>>>>> 2e2d1a4746c32d95e3e75a7efd64534fcec9875b
         (set-frame-position (selected-frame) 850 0)
         (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 160))
 
@@ -225,22 +222,30 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (message "3. Setting up themes...")
   (mapc #'disable-theme custom-enabled-themes)
   (if (display-graphic-p)
-      (progn
-        ;; (load-theme 'doom-material t))
-        (load-theme 'ef-owl t))
+      ;; GUI mode
+      (load-theme 'ef-owl t)
+    ;; Terminal mode
     (progn
       (load-theme 'tango t)
-      ;; Make the highlighted line more visible in terminal mode
-      (set-face-background 'hl-line "gray75")  ; Adjust this color as needed
-      ;; Optional: also adjust the foreground if needed
-      (set-face-foreground 'hl-line nil)  ; nil means "keep the original text color"
-      ;; Ensure the highlighting doesn't override text colors
+      ;; Terminal-specific face settings
+      (set-face-background 'hl-line "gray75")
+      (set-face-foreground 'hl-line nil)
       (set-face-attribute 'hl-line nil :inherit nil)
-      ;; Fix Vertico's current selection face for terminal
+
+      ;; Vertico face settings for terminal
       (with-eval-after-load 'vertico
         (set-face-background 'vertico-current "gray75")
-        ;; Optional: ensure text remains readable
         (set-face-attribute 'vertico-current nil :inherit nil)))))
+
+(defun my/setup-system-gui ()
+  "Setup system-specific GUI settings."
+  (when (display-graphic-p)
+    ;; Add your GUI-specific settings here
+    ))
+
+;; Set up hooks
+(add-hook 'after-init-hook #'my/setup-themes)
+(add-hook 'window-setup-hook #'my/setup-system-gui)
 
 
 ;; Set up non-GUI specific settings immediately
@@ -250,10 +255,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (setq mac-right-option-modifier 'nil)
   (setq mac-command-modifier 'control
         select-enable-clipboard t)))
-
-;; Set up hooks to run at the right time
-(add-hook 'after-init-hook #'my/setup-themes)
-(add-hook 'window-setup-hook #'my/setup-system-gui)
 
 ;; For daemon mode, also set up GUI settings when creating new frames
 (add-hook 'after-make-frame-functions
@@ -268,11 +269,8 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "4. Look and feel...")
 
-
-
-
 ;; For text files: auto-fill for actual line breaks at 88 chars
-(setq-default fill-column 79)
+(setq-default fill-column 88)
 (add-hook 'text-mode-hook (lambda ()
                             (auto-fill-mode 1)
                             (display-fill-column-indicator-mode 1)))
@@ -329,7 +327,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
 
 
   ;; Exclude some buffers from being dimmed
-  (add-to-list 'dimmer-exclusion-regexp-list "^\*helm")
+  ;; (add-to-list 'dimmer-exclusion-regexp-list "^\*helm")
   (add-to-list 'dimmer-exclusion-regexp-list "^\*Minibuf")
 
   ;; Configure and activate dimmer
@@ -471,28 +469,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :init (my/protected-buffers))
 
 
-;; Vertico provides vertical interactive mode for autocompletion when opening files etc.:
-(use-package vertico
-  :ensure t
-  :straight (:files (:defaults "extensions/*"))
-  :init (vertico-mode)
-  ;; Make completion case-insensitive
-  (setq completion-ignore-case t)
-  :bind (:map vertico-map
-              ("C-<backspace>" . vertico-directory-up))
-  :custom (vertico-cycle t)
-  :custom-face (vertico-current ((t (:background "#1d1f21")))))
-
-
-;; Enhances minibuffers:
-(use-package marginalia
-  :ensure t
-  :straight t
-  :after vertico
-  :init (marginalia-mode)
-  :custom
-  (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
-
 
 ;; ;; Spell checking:
 ;; (use-package ispell
@@ -516,6 +492,114 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;;     (message "Switched dictionary to %s" new)))
 
 ;; (global-set-key (kbd "<f8>") 'switch-dictionary-between-swedish-and-english) ; Bind to F8 key
+
+
+
+
+;; Custom function for zsh-like completion
+(defun my/zsh-like-completion ()
+  "Complete like zsh - complete until ambiguity."
+  (interactive)
+  (let ((completion-styles '(basic partial-completion))
+        (completion-category-overrides nil)
+        (completion-cycle-threshold nil))
+    (minibuffer-complete)))
+
+;; Global completion settings
+(setq completion-styles '(basic partial-completion)
+      completion-category-defaults nil
+      completion-category-overrides nil
+      completion-ignore-case t)
+
+;; Vertico configuration
+(use-package vertico
+  :ensure t
+  :straight (:files (:defaults "extensions/*"))
+  :init
+  (vertico-mode)
+  :bind (:map vertico-map
+              ("C-<backspace>" . vertico-directory-up)
+              ("C-n" . vertico-next)
+              ("C-p" . vertico-previous)
+              ("TAB" . my/zsh-like-completion))  ; Override TAB in Vertico
+  :bind (:map minibuffer-local-map
+              ("TAB" . my/zsh-like-completion)) ; Override TAB in minibuffer
+  :custom
+  (vertico-cycle t)
+  (vertico-preselect 'prompt)
+  (vertico-count 20)
+  (vertico-resize t)
+  (vertico-multiform-commands
+   '((consult-line buffer)
+     (consult-imenu buffer)
+     (consult-ripgrep buffer)))
+  :config
+  (setq vertico-count-format nil)
+  :custom-face
+  (vertico-current ((t (:background "#1d1f21")))))
+
+
+;; ;; Global completion settings
+;; (setq completion-styles '(basic partial-completion)  ; Simplified
+;;       completion-category-defaults nil
+;;       completion-category-overrides '((file (styles . (basic partial-completion))))
+;;       completion-ignore-case t)
+
+;; ;; Make TAB act more like zsh
+;; (define-key minibuffer-local-map (kbd "TAB") 'minibuffer-complete)
+;; (setq completion-cycle-threshold nil)
+;; (setq completion-pcm-word-delimiters "-_./:| ")
+;; (setq completion-pcm-complete-word-inserts-delimiters nil)
+
+;; ;; Vertico configuration
+;; (use-package vertico
+;;   :ensure t
+;;   :straight (:files (:defaults "extensions/*"))
+;;   :init
+;;   (vertico-mode)
+;;   :bind (:map vertico-map
+;;               ("C-<backspace>" . vertico-directory-up)
+;;               ("C-j" . vertico-next)
+;;               ("C-k" . vertico-previous))
+;;   :custom
+;;   (vertico-cycle t)
+;;   (vertico-preselect 'prompt)
+;;   (vertico-count 20)
+;;   (vertico-resize t)
+;;   (vertico-multiform-commands
+;;    '((consult-line buffer)
+;;      (consult-imenu buffer)
+;;      (consult-ripgrep buffer)))
+;;   :config
+;;   (setq vertico-count-format nil)
+;;   :custom-face
+;;   (vertico-current ((t (:background "#1d1f21")))))
+
+;; Marginalia
+(use-package marginalia
+  :ensure t
+  :straight t
+  :after vertico
+  :init (marginalia-mode)
+  :custom
+  (marginalia-annotators '(marginalia-annotators-heavy
+                           marginalia-annotators-light
+                           nil))
+  :bind (:map minibuffer-local-map
+              ("M-A" . marginalia-cycle)))
+
+;; Orderless - simplified configuration
+(use-package orderless
+  :ensure t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles . (basic partial-completion))))))
+
+
+
+
+
+
 
 
 
@@ -801,40 +885,62 @@ environments."
   :after (company auctex)
   :config (company-auctex-init))
 
+;; Global completion settings
+(setq completion-styles '(partial-completion basic)
+      completion-cycle-threshold nil
+      completion-pcm-complete-word-inserts-delimiters t
+      completion-ignore-case t
+      completion-category-defaults nil
+      completion-category-overrides nil)
 
-;; Fuzzy completion of filenames etc.:
-(defvar helm-autoresize-mode)
-(defvar helm-autoresize-max-height)
-(defvar helm-mode-fuzzy-match)
-(defvar helm-completion-in-region-fuzzy-match)
-
-(use-package helm
+;; Vertico configuration
+(use-package vertico
   :ensure t
+  :straight (:files (:defaults "extensions/*"))
+  :init
+  (vertico-mode)
+
+  :bind (:map vertico-map
+              ("C-<backspace>" . vertico-directory-up)
+              ("C-n" . vertico-next)
+              ("C-p" . vertico-previous))
+
+  :custom
+  (vertico-cycle t)
+  (vertico-preselect 'prompt)    ; Start at prompt instead of first candidate
+  (vertico-count 20)             ; Show more candidates
+  (vertico-resize t)             ; Resize mini-window to fit content
+  (vertico-multiform-commands
+   '((consult-line buffer)       ; Different display modes for different commands
+     (consult-imenu buffer)
+     (consult-ripgrep buffer)))
+
   :config
-  ;; Let Helm decide best size of minibuffer:
-  (helm-autoresize-mode 1))
-;; Relative sizes of the above:
-;; (setq helm-autoresize-max-height 30) ; Max height in percentage of frame height.
-;; (setq helm-autoresize-min-height 20)) ; Min height in percentage of frame height.
-;; Set a fixed height:
-;; (setq helm-display-buffer-height 20) ; Set the fixed height of the Helm window.
+  (setq vertico-count-format nil) ; Removes the match counter
 
-;; Enable fuzzy matching for all Helm commands
-;; (setq helm-mode-fuzzy-match t)
-;; (setq helm-completion-in-region-fuzzy-match t))
+  :custom-face
+  (vertico-current ((t (:background "#1d1f21")))))
 
-;; (helm-mode 1)
-
-;; (global-set-key (kbd "C-x C-f") 'helm-find-files)
-
-;; Sometimes Emacs complains about file-notify being missing, then use polling:
-;; (setq file-notify--library 'polling)
-
-
-(use-package helm-lsp
+;; Orderless configuration (optional)
+(use-package orderless
   :ensure t
-  :commands helm-lsp-workspace-symbol)
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles . (partial-completion))))))
 
+;; Enhances minibuffers:
+(use-package marginalia
+  :ensure t
+  :straight t
+  :after vertico
+  :init (marginalia-mode)
+  :bind (:map minibuffer-local-map
+              ("M-A" . marginalia-cycle))  ; Cycle through annotation levels
+  :custom
+  (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+
+
+(use-package all-the-icons :ensure t)
 
 (use-package lsp-treemacs
   :ensure t
@@ -1276,4 +1382,4 @@ environments."
   :hook ((json-mode . prettier-mode)
          (my-jsonc-mode . prettier-mode)))
 
-;;; config.el ends here
+config.el ends here
