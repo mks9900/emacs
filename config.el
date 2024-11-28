@@ -194,39 +194,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (defvar xdg-cache (getenv "XDG_CACHE_HOME"))
 (defvar xdg-config (getenv "XDG_CONFIG_HOME"))
 
-;; Define a function to set up system-specific GUI settings
-(defun my/setup-system-gui ()
-  "Configure system-specific GUI settings"
-  (when (display-graphic-p)
-    (cond
-     ;; macOS specific
-     ((and (eq system-type 'darwin)
-           (string-equal (system-name) "macbook15-macos.vilanelva.se"))
-      (add-to-list 'default-frame-alist '(fullscreen . maximized))
-      (set-face-attribute 'default nil :font "Source Code Pro" :height 180))
-
-     ;; Linux specific
-     ((eq system-type 'gnu/linux)
-      (cond
-       ((string-equal (system-name) "rocky-ws")
-        (set-frame-size (selected-frame) 100 70)
-        (set-frame-size (selected-frame) 120 70)
-        (set-frame-position (selected-frame) 850 0)
-        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 160))
-
-       ((string-equal (system-name) "macbook13-linux")
-        (add-to-list 'default-frame-alist '(fullscreen . maximized))
-        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 200))
-
-       ((string-equal (system-name) "sodra-ds-test")
-        (set-frame-size (selected-frame) 100 50)
-        (set-frame-position (selected-frame) 10 10)
-        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 180))
-
-       ((string-equal (system-name) "sod-as103403")
-        (set-frame-size (selected-frame) 160 90)
-        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 240)))))))
-
 
 ;; Theme setup function
 (defun my/setup-themes ()
@@ -243,17 +210,38 @@ Also handles various cleanup tasks like removing trailing whitespace."
       (set-face-background 'hl-line "gray75")
       (set-face-foreground 'hl-line nil)
       (set-face-attribute 'hl-line nil :inherit nil)
-
       ;; Vertico face settings for terminal
       (with-eval-after-load 'vertico
         (set-face-background 'vertico-current "gray75")
         (set-face-attribute 'vertico-current nil :inherit nil)))))
 
 (defun my/setup-system-gui ()
-  "Setup system-specific GUI settings."
+  "Configure system-specific GUI settings"
   (when (display-graphic-p)
-    ;; Add your GUI-specific settings here
-    ))
+    (cond
+     ;; macOS specific
+     ((and (eq system-type 'darwin)
+           (string-equal (system-name) "macbook15-macos.vilanelva.se"))
+      (add-to-list 'default-frame-alist '(fullscreen . maximized))
+      (set-face-attribute 'default nil :font "Source Code Pro" :height 180))
+     ;; Linux specific
+     ((eq system-type 'gnu/linux)
+      (cond
+       ((string-equal (system-name) "rocky-ws")
+        (set-frame-size (selected-frame) 100 70)
+        (set-frame-size (selected-frame) 120 70)
+        (set-frame-position (selected-frame) 850 0)
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 160))
+       ((string-equal (system-name) "macbook13-linux")
+        (add-to-list 'default-frame-alist '(fullscreen . maximized))
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 200))
+       ((string-equal (system-name) "sodra-ds-test")
+        ;; (set-frame-size (selected-frame) 100 50)
+        ;; (set-frame-position (selected-frame) 10 10)
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 240))
+       ((string-equal (system-name) "sod-as103403")
+        (set-frame-size (selected-frame) 160 90)
+        (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 240)))))))
 
 ;; Set up hooks
 (add-hook 'after-init-hook #'my/setup-themes)
@@ -573,19 +561,19 @@ Also handles various cleanup tasks like removing trailing whitespace."
 
 
 (use-package vterm
-    :ensure t
-    :config
-    (setq vterm-max-scrollback 10000)
-    ;; Add the exceptions
-    (setq vterm-keymap-exceptions '("C-x" "C-u" "C-g" "C-h" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
-                                   "M-i" "M-j" "M-k" "M-l"))
-    ;; Define these keys in vterm's own keymap
-    :bind (:map vterm-mode-map
-                ("M-i" . windmove-up)
-                ("M-j" . windmove-left)
-                ("M-k" . windmove-down)
-                ("M-l" . windmove-right))
-    :bind (("C-c t" . vterm)))
+  :ensure t
+  :config
+  (setq vterm-max-scrollback 10000)
+  ;; Add the exceptions
+  (setq vterm-keymap-exceptions '("C-x" "C-u" "C-g" "C-h" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
+                                  "M-i" "M-j" "M-k" "M-l"))
+  ;; Define these keys in vterm's own keymap
+  :bind (:map vterm-mode-map
+              ("M-i" . windmove-up)
+              ("M-j" . windmove-left)
+              ("M-k" . windmove-down)
+              ("M-l" . windmove-right))
+  :bind (("C-c t" . vterm)))
 
 
 ;; LaTeX support:
