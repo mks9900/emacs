@@ -539,42 +539,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (vertico-current ((t (:background "#1d1f21")))))
 
 
-;; ;; Global completion settings
-;; (setq completion-styles '(basic partial-completion)  ; Simplified
-;;       completion-category-defaults nil
-;;       completion-category-overrides '((file (styles . (basic partial-completion))))
-;;       completion-ignore-case t)
-
-;; ;; Make TAB act more like zsh
-;; (define-key minibuffer-local-map (kbd "TAB") 'minibuffer-complete)
-;; (setq completion-cycle-threshold nil)
-;; (setq completion-pcm-word-delimiters "-_./:| ")
-;; (setq completion-pcm-complete-word-inserts-delimiters nil)
-
-;; ;; Vertico configuration
-;; (use-package vertico
-;;   :ensure t
-;;   :straight (:files (:defaults "extensions/*"))
-;;   :init
-;;   (vertico-mode)
-;;   :bind (:map vertico-map
-;;               ("C-<backspace>" . vertico-directory-up)
-;;               ("C-j" . vertico-next)
-;;               ("C-k" . vertico-previous))
-;;   :custom
-;;   (vertico-cycle t)
-;;   (vertico-preselect 'prompt)
-;;   (vertico-count 20)
-;;   (vertico-resize t)
-;;   (vertico-multiform-commands
-;;    '((consult-line buffer)
-;;      (consult-imenu buffer)
-;;      (consult-ripgrep buffer)))
-;;   :config
-;;   (setq vertico-count-format nil)
-;;   :custom-face
-;;   (vertico-current ((t (:background "#1d1f21")))))
-
 ;; Marginalia
 (use-package marginalia
   :ensure t
@@ -596,11 +560,20 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (completion-category-overrides '((file (styles . (basic partial-completion))))))
 
 
-
-
-
-
-
+(use-package vterm
+    :ensure t
+    :config
+    (setq vterm-max-scrollback 10000)
+    ;; Add the exceptions
+    (setq vterm-keymap-exceptions '("C-x" "C-u" "C-g" "C-h" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
+                                   "M-i" "M-j" "M-k" "M-l"))
+    ;; Define these keys in vterm's own keymap
+    :bind (:map vterm-mode-map
+                ("M-i" . windmove-up)
+                ("M-j" . windmove-left)
+                ("M-k" . windmove-down)
+                ("M-l" . windmove-right))
+    :bind (("C-c t" . vterm)))
 
 
 ;; LaTeX support:
