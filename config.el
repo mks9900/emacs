@@ -172,6 +172,18 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (bind-key "C-Y" #'yank)
 
 
+;; Always center current line:
+(use-package centered-cursor-mode
+  :ensure t
+  :config
+  ;; To enable it globally (in all buffers):
+  (global-centered-cursor-mode 1)
+  ;; Or if you prefer to enable it only in specific modes:
+  ;; (add-hook 'text-mode-hook 'centered-cursor-mode)
+  )
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OS-specifics:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
