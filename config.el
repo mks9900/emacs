@@ -9,14 +9,12 @@
 ;;
 ;; Besides the above, also install texlive-type of package to handle Tex-files.
 ;;
-;; cargo is used to build texlab later on.
 ;; Also, install the following:
-;; $ sudo snap install marksman # markdown LSP-server
+;; $ brew install marksman # markdown LSP-server
 ;; $ npm install -g prettier # markdown formatting in Emacs
 ;; $ npm install dictionary-sv
 ;; $ npm install dictionary-en-gb
 ;; $ sudo npm install -g pyright
-;; $ cargo install --git https://github.com/latex-lsp/texlab.git
 ;;
 ;; Every other package should be installed using use-package.
 
@@ -87,6 +85,10 @@
 
 ;; Mark whole buffer:
 (global-set-key (kbd "C-c a") 'mark-whole-buffer)
+
+
+;; Indent region (instead of C-M-\)
+(global-set-key (kbd "C-c i") 'indent-region)
 
 
 ;; Short-cut for editing config.el:
@@ -579,19 +581,16 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;; LaTeX support:
 
 (message "7. LaTeX...")
-(defvar TeX-auto-save)
-(defvar TeX-parse-self)
-(defvar TeX-master)
-(defvar TeX-engine)
-(defvar TeX-view-program-selection)
-(defvar TeX-view-program-list)
-(defvar LaTeX-item-indent)
-(defvar LaTeX-indent-level-item-continuation)
-(defvar TeX-quote-language-alist)
-(defvar TeX-quote-language)
 
 
+;; LaTeX configuration for Emacs
 
+;; Set indentation for LaTeX lists
+(setq LaTeX-indent-level 2)
+(setq LaTeX-item-indent 0)
+(setq LaTeX-indent-level-item-continuation 4)
+
+;; Define the indentation function for list environments
 (defun LaTeX-indent-item ()
   "Provide proper indentation for LaTeX \"itemize\",\"enumerate\", and
 \"description\" environments.
@@ -632,116 +631,103 @@ Also handles various cleanup tasks like removing trailing whitespace."
             (t
              (+ contin indent))))))
 
-(defcustom LaTeX-indent-level-item-continuation 4
-  "*Indentation of continuation lines for items in itemize-like
-environments."
-  :group 'LaTeX-indentation
-  :type 'integer)
-
-(eval-after-load "latex"
-  '(setq LaTeX-indent-environment-list
-         (nconc '(("itemize" LaTeX-indent-item)
-                  ("enumerate" LaTeX-indent-item)
-                  ("description" LaTeX-indent-item))
-                LaTeX-indent-environment-list)))
-
-(use-package auctex
-  :ensure t
+(use-package tex
+  :ensure auctex
   :mode ("\\.tex\\'" . latex-mode)
   :config
-  ;; Enable automatic saving and parsing of TeX files
   (setq TeX-auto-save t
         TeX-parse-self t
-        TeX-master nil  ;; Query for the master file
+        TeX-master nil
+        TeX-engine 'xetex
+        ;; Use PDF mode by default
+        TeX-PDF-mode t
+        ;; Prevent confirmation for cleaning generated files
+        TeX-clean-confirm nil
+        ;; Add -shell-escape by default for minted package
+        LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %S%(PDFout)"))
+        ;; Swedish quotes
         TeX-quote-language-alist '(("swedish" "\"" "\"" t))
-        TeX-quote-language "swedish"
-        TeX-engine 'xetex)
+        TeX-quote-language "swedish")
 
-  ;; Modify LaTeX command to include -shell-escape for all engines
-  (setq LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %S%(PDFout)")))
-
-  ;; Optional: Set the PDF viewer (e.g., Skim on macOS, evince on Linux)
-  (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-  (cond
-   ((eq system-type 'darwin)
-    ;; macOS:
-    (setq TeX-view-program-list '(("PDF Viewer" "/Applications/Skim.app/Contents/MacOS/Skim"))))
-   ((eq system-type 'gnu/linux)
-    ;; Linux:
-    (setq TeX-view-program-list '(("PDF Viewer" "evince %o")))))
+  ;; Set up PDF Tools as the viewer
+  (use-package pdf-tools
+    :ensure t
+    :magic ("%PDF" . pdf-view-mode)
+    :config
+    (pdf-tools-install :no-query)
+    ;; Don't ask to reload when the PDF changes
+    (setq revert-without-query '(".*"))
+    (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
+    (add-hook 'TeX-after-compilation-finished-functions
+              #'TeX-revert-document-buffer))
 
   ;; Enable useful minor modes
-  (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
-  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-
-  ;; Enable parsing of minted package
+  (add-hook 'LaTeX-mode-hook #'visual-line-mode)
+  (add-hook 'LaTeX-mode-hook #'flyspell-mode)
+  (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
+  (add-hook 'LaTeX-mode-hook #'reftex-mode)
+  
+  ;; Enable minted for code highlighting
   (add-to-list 'LaTeX-verbatim-environments "minted")
   (add-to-list 'LaTeX-verbatim-macros-with-braces "mintinline"))
 
-;; Ensure -shell-escape is used for compilation
-(eval-after-load 'tex
-  '(progn
-     (assq-delete-all 'output-pdf TeX-command-list)
-     (add-to-list 'TeX-command-list
-                  '("LaTeX" "%`%l%(mode) -shell-escape%' %t" TeX-run-TeX nil t))))
+;; Enhanced reference management
+(use-package reftex
+  :ensure t
+  :after tex
+  :config
+  (setq reftex-plug-into-AUCTeX t
+        ;; Ensure RefTeX finds your bibliography files
+        reftex-default-bibliography '("references.bib")))
 
-;; Since C-c ` is a little tricky to type on my Swedish keyboard,
-;; I've assigned it to this instead:
+;; Completion support
+(use-package company-auctex
+  :ensure t
+  :after (company tex)
+  :config
+  (company-auctex-init))
+
+;; Fast math input
+(use-package cdlatex
+  :ensure t
+  :after tex
+  :hook (LaTeX-mode . turn-on-cdlatex)
+  :config
+  (setq cdlatex-math-symbol-alist
+        '((?= ("\\equiv" "\\approx" "\\cong" "\\simeq"))
+          (?> ("\\Rightarrow" "\\rightarrow" "\\Longrightarrow"))
+          (?< ("\\Leftarrow" "\\leftarrow" "\\Longleftarrow")))))
+
+;; LSP support through texlab
+(use-package lsp-latex
+  :ensure t
+  :after tex
+  :hook ((LaTeX-mode . lsp)
+         (lsp-mode . lsp-enable-which-key-integration))
+  :config
+  (setq lsp-latex-texlab-executable "/usr/bin/texlab"
+        lsp-latex-build-on-save t))
+
+;; Preview equations inline
+(use-package math-preview
+  :ensure t
+  :after tex
+  :custom
+  (math-preview-command "/usr/local/bin/math-preview"))
+
+;; Keybinding for error navigation (Swedish keyboard friendly)
 (with-eval-after-load 'tex
   (define-key TeX-mode-map (kbd "C-c f") 'TeX-next-error))
 
-;; Tell Emacs to treat the minted environment like verbatim
-(require 'latex)
-(add-to-list 'LaTeX-verbatim-environments "minted")
+;; Optional: Set up structure folding
+(add-hook 'LaTeX-mode-hook 'outline-minor-mode)
+(add-hook 'LaTeX-mode-hook 'TeX-fold-mode)
 
-
-(use-package lsp-latex
-  :ensure t
-  :hook ((LaTeX-mode . lsp)  ;; or (TeX-mode . lsp) for some setups
-         (lsp-mode . lsp-enable-which-key-integration))
-  :config
-  ;; Set the path to the TexLab server if it's not automatically detected
-  ;; Pandoc is located at different places:
-  (cond
-   ((eq system-type 'darwin)
-    ;; macOS:
-    (setq lsp-latex-texlab-executable "/usr/local/bin/texlab")
-    )
-
-   ;; Linux-specific configurations
-   ((eq system-type 'gnu/linux)
-    (setq lsp-latex-texlab-executable "/home/johanthor/.cargo/bin/texlab")
-    )
-   )
-
-  ;; Customization options as needed
-  )
-
-
-(with-eval-after-load "tex-mode"
-  (add-hook 'tex-mode-hook 'lsp)
-  (add-hook 'latex-mode-hook 'lsp)
-  )
-
-;; Previewing equations inline from LaTeX:
-(use-package math-preview
-  :ensure t
-  :custom
-  ;; Below is the same for macOS and Linux, install through npm:
-  (math-preview-command "/usr/local/bin/math-preview")
-  ;; (cond
-  ;;  ((eq system-type 'darwin)
-  ;;   ;; macOS:
-  ;;   (math-preview-command "/usr/local/bin/math-preview")
-  ;;   )
-
-  ;;  ;; Linux-specific configurations
-  ;;  ((eq system-type 'gnu/linux)
-  ;;   (math-preview-command "/usr/local/bin/math-preview")
-  ;;   )
-  ;;  )
-  )
+;; Set up proper list environment indentation
+(with-eval-after-load "latex"
+  (add-to-list 'LaTeX-indent-environment-list '("itemize" LaTeX-indent-item))
+  (add-to-list 'LaTeX-indent-environment-list '("enumerate" LaTeX-indent-item))
+  (add-to-list 'LaTeX-indent-environment-list '("description" LaTeX-indent-item)))
 
 
 ;; Markdown support:
@@ -793,63 +779,27 @@ environments."
   :hook (markdown-mode . prettier-js-mode))
 
 
-
-;; Use LSP:
-(message "8. LSP...")
-(defvar lsp-pyright-venv-path)
-(defvar lsp-pyright-auto-search-paths)
-(defvar lsp-pyright-use-library-code-for-types)
-(defvar lsp-ui-flycheck-enable)
-(defvar lsp-ui-flycheck-list-position)
-(defvar lsp-ui-flycheck-live-reporting)
-
-(use-package lsp-mode
-  :ensure t
-  :hook ((lisp-mode . lsp)
-         (scheme-mode . lsp)
-         (python-mode . lsp-deferred))
-  :commands (lsp lsp-deferred)
-  :init
-  (setq lsp-keymap-prefix "C-c l")  ; Set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-  :config
-  (setq lsp-enable-snippet nil)  ; Disable snippets support. Set to t if you want snippets.
-  (setq lsp-pyright-venv-path (expand-file-name "~/.pyenv/versions")) ; Adjust to your pyenv versions path
-  ;; Auto-detect pyenv virtual environments
-  (setq lsp-pyright-auto-search-paths t)
-  (setq lsp-pyright-use-library-code-for-types t))
-
-(use-package lsp-ui
-  :ensure t
-  :commands lsp-ui-mode
-  :config
-  (setq lsp-ui-doc-enable t
-        lsp-ui-doc-use-childframe t
-        lsp-ui-doc-position 'top
-        lsp-ui-doc-include-signature t
-        lsp-ui-sideline-enable nil
-        lsp-ui-flycheck-enable t
-        lsp-ui-flycheck-list-position 'right
-        lsp-ui-flycheck-live-reporting t
-        lsp-ui-peek-enable t
-        lsp-ui-peek-list-width 60
-        lsp-ui-peek-peek-height 25))
-
-
 ;; Completions
 (use-package company
   :ensure t
-  :after lsp-mode
-  :hook ((lsp-mode . company-mode)
-         (after-init . global-company-mode))
+  :hook (after-init . global-company-mode)
   :config
-  (add-to-list 'company-backends 'company-files) ; Add company-files for path completion
   (setq company-minimum-prefix-length 1
-        company-idle-delay 0.0) ; Decrease delay before autocompletion popup shows
-  (setq company-backends '((company-files          ; Enable filename completion
-                            company-keywords       ; Complete programming language keywords
-                            company-capf          ; Completion-at-point functions (e.g., LSP)
-                            company-yasnippet)))  ; Snippet completion
-  )
+        company-idle-delay 0.0)
+  ;; Make TAB behave less aggressively
+  (define-key company-active-map [tab] nil)
+  (define-key company-active-map (kbd "TAB") nil))
+
+(use-package yasnippet
+  :ensure t
+  :hook ((python-mode . yas-minor-mode)
+         (prog-mode . yas-minor-mode))
+  :config
+  (yas-reload-all))
+
+(use-package yasnippet-snippets
+  :ensure t
+  :after yasnippet)
 
 
 ;; Optional: Company AUCTeX integrates Company with AUCTeX
@@ -947,29 +897,83 @@ environments."
 (add-hook 'python-mode-hook #'my/set-flycheck-python-interpreter)
 
 
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python-section:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "9. Python-specifics...")
 
-;; Pyenv:
+;; Basic Python settings
+(setq python-indent-offset 4)
+
+;; Yasnippet setup
+(use-package yasnippet
+  :ensure t
+  :hook ((python-mode . yas-minor-mode)
+         (prog-mode . yas-minor-mode))
+  :config
+  (yas-reload-all))
+
+;; Add the official snippet collection
+(use-package yasnippet-snippets
+  :ensure t
+  :after yasnippet)
+
+
+;; Pyenv configuration
 (use-package pyenv-mode
   :ensure t
   :init
   (add-to-list 'exec-path "~/.pyenv/shims")
   :config
-  (pyenv-mode))
-
-(when (executable-find "pyenv")
-  (setenv "PYENV_ROOT" (replace-regexp-in-string "\n" "" (shell-command-to-string "pyenv root")))
-  (add-to-list 'exec-path (concat (getenv "PYENV_ROOT") "/shims")))
-
-(add-hook 'python-mode-hook 'pyenv-mode)
-(global-set-key (kbd "C-c C-s") 'pyenv-mode-set) ; Set key binding to switch pyenv environments
+  (pyenv-mode)
+  (when (executable-find "pyenv")
+    (setenv "PYENV_ROOT" (replace-regexp-in-string "\n" "" (shell-command-to-string "pyenv root")))
+    (add-to-list 'exec-path (concat (getenv "PYENV_ROOT") "/shims")))
+  :hook (python-mode . pyenv-mode)
+  :bind ("C-c C-s" . pyenv-mode-set))
 
 
-(defvar python-indent-offset)
-(setq python-indent-offset 4)
+;; Configure eglot to use both pylsp and ruff-lsp
+(use-package eglot
+  :ensure t
+  :hook (python-mode . eglot-ensure)
+  :config
+  ;; (add-to-list 'eglot-server-programs
+  ;; '(python-mode . ("pylsp")))
+  ;; Add ruff-lsp as an additional server
+  (add-to-list 'eglot-server-programs
+               '(python-mode . ("ruff-lsp")))
+  :bind (:map eglot-mode-map
+              ("C-c l a" . eglot-code-actions)
+              ("C-c l r" . eglot-rename)
+              ("C-c l f" . eglot-format)
+              ("C-c l d" . eglot-find-declaration))
+  Customize eglot features
+  (setq eglot-autoshutdown t  ; shutdown language server after closing last file
+        eglot-confirm-server-initiated-edits nil))  ; allow server to edit files
+
+
+;; Optional: If you want to run ruff fixes on save
+(use-package flymake-ruff
+  :ensure t
+  :hook (python-mode . flymake-ruff-load))
+
+
+;; Company for completion
+(use-package company
+  :ensure t
+  :hook (after-init . global-company-mode)
+  :config
+  (setq company-minimum-prefix-length 1
+        company-idle-delay 0.0
+        company-backends '((company-files          ; Enable filename completion
+                            company-keywords         ; Complete programming language keywords
+                            company-capf            ; Completion-at-point functions
+                            company-yasnippet))))   ; Snippet completion
+
 
 
 ;; Indentation guides
@@ -979,7 +983,7 @@ environments."
   (indent-bars-treesit-support t)
   (indent-bars-no-descend-string t)
   (indent-bars-treesit-ignore-blank-lines-types '("module"))
-  (indent-bars-treesit-wrap '((python argument_list parameters ; for python, as an example
+  (indent-bars-treesit-wrap '((python argument_list parameters
                                       list list_comprehension
                                       dictionary dictionary_comprehension
                                       parenthesized_expression subscript)))
@@ -987,76 +991,13 @@ environments."
   (setq
    indent-bars-color '(highlight :face-bg t :blend 0.3)
    indent-bars-prefer-character 1
-   ;; indent-bars-pattern ".*.*.*.*"
    indent-bars-width-frac 0.9
    indent-bars-pad-frac 0.2
    indent-bars-zigzag 0.1
    indent-bars-color-by-depth '(:palette ("red" "green" "orange" "cyan") :blend 1)
    indent-bars-highlight-current-depth '(:blend 0.5))
-  :hook
-  ((python-base-mode) . indent-bars-mode))
+  :hook ((python-base-mode) . indent-bars-mode))
 
-
-
-;; Misc Python goodies:
-(use-package buftra
-  :ensure t
-  :straight (:host github :repo "humitos/buftra.el"))
-
-
-(use-package py-pyment
-  :ensure t
-  :straight (:host github :repo "humitos/py-cmd-buffer.el")
-  :config
-  (setq py-pyment-options '("--output=numpydoc")))
-
-
-;; py-isort below seems to depend on this:
-(use-package projectile
-  :ensure t
-  :config
-  (projectile-mode +1)
-  ;; Set up your preferred keymap prefix, e.g., "C-c p"
-  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
-
-
-(use-package py-isort
-  :ensure t
-  :straight (:host github :repo "humitos/py-cmd-buffer.el")
-  :hook (python-mode . py-isort-enable-on-save)
-  :config
-  (setq py-isort-options '("--lines=88" "-m=3" "-tc" "-fgw=0" "-ca")))
-
-
-(use-package py-autoflake
-  :ensure t
-  :straight (:host github :repo "humitos/py-cmd-buffer.el")
-  :hook (python-mode . py-autoflake-enable-on-save)
-  :config
-  (setq py-autoflake-options '("--expand-star-imports")))
-
-
-(use-package py-docformatter
-  :ensure t
-  :straight (:host github :repo "humitos/py-cmd-buffer.el")
-  :hook (python-mode . py-docformatter-enable-on-save)
-  :config
-  (setq py-docformatter-options '("--wrap-summaries=88" "--pre-summary-newline")))
-
-
-(use-package blacken
-  :straight t
-  :hook (python-mode . blacken-mode)
-  :config
-  (setq blacken-line-length '88))
-
-
-(use-package py-isort
-  :straight t
-  :hook ((before-save . py-isort-before-save)
-         (python-mode . py-isort-enable-on-save))
-  :config
-  (setq py-isort-options '("-l=88" "--profile=black")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1184,7 +1125,6 @@ environments."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "12. Different modes...")
 
-;; Code added by Claude! :-)
 ;; Text mode settings
 (add-hook 'text-mode-hook
           (lambda ()
@@ -1215,10 +1155,12 @@ environments."
             (setq-local tab-width 4)                   ; Set tab width
             (setq-local indent-tabs-mode nil)))        ; Use spaces instead of tabs
 
+
 ;; Better word count
 (use-package wc-mode
   :ensure t
   :hook (text-mode . wc-mode))
+
 
 ;; Enhanced text navigation
 (use-package avy
@@ -1226,7 +1168,8 @@ environments."
   :bind (("C-:" . avy-goto-char)
          ("C-'" . avy-goto-char-2)))
 
-;; Multiple cursors for text editing
+
+c;; Multiple cursors for text editing
 (use-package multiple-cursors
   :ensure t
   :bind (("C-c m c" . mc/edit-lines)
@@ -1346,13 +1289,15 @@ environments."
   (define-key json-mode-map (kbd "C-c C-t") 'my/toggle-json-format-on-save)
   (define-key json-mode-map (kbd "C-c C-f") 'json-pretty-print-buffer))
 
+
 (use-package json-navigator
   :straight t
   :after json-mode)
+
 
 (use-package prettier
   :straight t
   :hook ((json-mode . prettier-mode)
          (my-jsonc-mode . prettier-mode)))
 
-config.el ends here
+;;; config.el ends here
