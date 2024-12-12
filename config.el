@@ -125,7 +125,7 @@
       ;; For other modes, use standard comment function
       (comment-or-uncomment-region start end))))
 
-(global-set-key (kbd "C-1") 'comment-or-uncomment-line-or-region)
+(global-set-key (kbd "M-1") 'comment-or-uncomment-line-or-region)
 
 
 ;; Create a function to indent buffers:
@@ -150,7 +150,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (force-mode-line-update)
   (sit-for 0.5))
 
-(global-set-key (kbd "C-2") 'indent-buffer-smart)
+(global-set-key (kbd "M-2") 'indent-buffer-smart)
 
 
 
@@ -205,14 +205,14 @@ Also handles various cleanup tasks like removing trailing whitespace."
       (load-theme 'ef-owl t)
     ;; Terminal mode
     (progn
-      (load-theme 'tango t)
+      (load-theme 'tango-dark t)
       ;; Terminal-specific face settings
-      (set-face-background 'hl-line "gray75")
+      (set-face-background 'hl-line "gray25")
       (set-face-foreground 'hl-line nil)
       (set-face-attribute 'hl-line nil :inherit nil)
       ;; Vertico face settings for terminal
       (with-eval-after-load 'vertico
-        (set-face-background 'vertico-current "gray75")
+        (set-face-background 'vertico-current "gray25")
         (set-face-attribute 'vertico-current nil :inherit nil)))))
 
 (defun my/setup-system-gui ()
