@@ -273,14 +273,14 @@ Also handles various cleanup tasks like removing trailing whitespace."
 
 ;; For text files: auto-fill for actual line breaks at 88 chars
 (setq-default fill-column 88)
-(add-hook 'text-mode-hook (lambda ()
-                            (auto-fill-mode 1)
-                            (display-fill-column-indicator-mode 1)))
+;; (add-hook 'text-mode-hook (lambda ()
+                            ;; (visual-line-mode 1)
+                            ;; (display-fill-column-indicator-mode 1)))
 
 ;; For programming modes: visual-line-mode for soft wrapping
-(add-hook 'prog-mode-hook (lambda ()
-                            (visual-line-mode 1)
-                            (display-fill-column-indicator-mode 1)))
+;; (add-hook 'prog-mode-hook (lambda ()
+                            ;; (visual-line-mode 1)
+                            ;; (display-fill-column-indicator-mode 1)))
 
 ;; Keep column indicator globally available but let modes enable it
 (setq-default display-fill-column-indicator-column 88)
@@ -662,11 +662,11 @@ Also handles various cleanup tasks like removing trailing whitespace."
               #'TeX-revert-document-buffer))
 
   ;; Enable useful minor modes
-  (add-hook 'LaTeX-mode-hook #'visual-line-mode)
+  ;; (add-hook 'LaTeX-mode-hook #'visual-line-mode)
   (add-hook 'LaTeX-mode-hook #'flyspell-mode)
   (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
   (add-hook 'LaTeX-mode-hook #'reftex-mode)
-  
+
   ;; Enable minted for code highlighting
   (add-to-list 'LaTeX-verbatim-environments "minted")
   (add-to-list 'LaTeX-verbatim-macros-with-braces "mintinline"))
@@ -754,7 +754,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
   )
 
 (add-hook 'markdown-mode-hook (lambda ()
-                                (visual-line-mode 1)
+                                ;; (visual-line-mode 1)
                                 (display-fill-column-indicator-mode 1)))
 
 
@@ -1129,7 +1129,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (add-hook 'text-mode-hook
           (lambda ()
             ;; Basic formatting
-            (auto-fill-mode 1)                          ; Auto wrap at fill-column
+            ;; (auto-fill-mode 1)                          ; Auto wrap at fill-column
             (display-fill-column-indicator-mode 1)      ; Show the fill column
             (display-line-numbers-mode 1)               ; Show line numbers
 
