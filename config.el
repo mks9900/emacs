@@ -50,7 +50,7 @@
 
 ;; Integrates `straight' directly into the `use-package' package through the `:straight' expression.
 (straight-use-package 'use-package)
-;; (setq straight-check-for-modifications '(find-when-checking))
+(setq straight-check-for-modifications '(find-when-checking))
 
 
 
@@ -73,6 +73,10 @@
  auto-save-default nil
  create-lockfiles nil)
 
+
+;; Don't write sensitive info in plain text:
+(setq auth-sources '("~/.authinfo.gpg")
+      auth-source-save-behavior t)
 
 ;; Stop Emacs from hiding:
 (unbind-key "C-z") ;; suspend-frame
@@ -132,8 +136,8 @@
 
 ;; Create a function to indent buffers:
 (defun indent-buffer-smart ()
-  "Indent buffer while preserving point and window position.
-Also handles various cleanup tasks like removing trailing whitespace."
+  ;;   "Indent buffer while preserving point and window position.
+  ;; Also handles various cleanup tasks like removing trailing whitespace."
   (interactive)
   ;; Remember window position
   (let ((window-start (window-start)))
@@ -175,15 +179,14 @@ Also handles various cleanup tasks like removing trailing whitespace."
 
 
 ;; Always center current line:
-(use-package centered-cursor-mode
-  :ensure t
-  :config
-  ;; To enable it globally (in all buffers):
-  (global-centered-cursor-mode 1)
-  ;; Or if you prefer to enable it only in specific modes:
-  ;; (add-hook 'text-mode-hook 'centered-cursor-mode)
-  )
-
+;; (use-package centered-cursor-mode
+;;   :ensure t
+;;   :config
+;;   ;; To enable it globally (in all buffers):
+;;   (global-centered-cursor-mode 1)
+;;   ;; Or if you prefer to enable it only in specific modes:
+;;   ;; (add-hook 'text-mode-hook 'centered-cursor-mode)
+;;   )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -245,6 +248,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
         (set-frame-size (selected-frame) 160 90)
         (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 240)))))))
 
+
 ;; Set up hooks
 (add-hook 'after-init-hook #'my/setup-themes)
 (add-hook 'window-setup-hook #'my/setup-system-gui)
@@ -257,6 +261,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (setq mac-right-option-modifier 'nil)
   (setq mac-command-modifier 'control
         select-enable-clipboard t)))
+
 
 ;; For daemon mode, also set up GUI settings when creating new frames
 (add-hook 'after-make-frame-functions
@@ -273,18 +278,17 @@ Also handles various cleanup tasks like removing trailing whitespace."
 
 ;; For text files: auto-fill for actual line breaks at 88 chars
 (setq-default fill-column 88)
-;; (add-hook 'text-mode-hook (lambda ()
-                            ;; (visual-line-mode 1)
-                            ;; (display-fill-column-indicator-mode 1)))
+(add-hook 'text-mode-hook (lambda ()
+                            (visual-line-mode 1)
+                            (display-fill-column-indicator-mode 1)))
 
 ;; For programming modes: visual-line-mode for soft wrapping
-;; (add-hook 'prog-mode-hook (lambda ()
-                            ;; (visual-line-mode 1)
-                            ;; (display-fill-column-indicator-mode 1)))
+(add-hook 'prog-mode-hook (lambda ()
+                            (visual-line-mode 1)
+                            (display-fill-column-indicator-mode 1)))
 
 ;; Keep column indicator globally available but let modes enable it
 (setq-default display-fill-column-indicator-column 88)
-
 
 
 (custom-set-variables
@@ -471,7 +475,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :init (my/protected-buffers))
 
 
-
 ;; ;; Spell checking:
 ;; (use-package ispell
 ;;   :ensure nil ; `ispell` is bundled with Emacs, so we don't need to install it...
@@ -496,8 +499,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;; (global-set-key (kbd "<f8>") 'switch-dictionary-between-swedish-and-english) ; Bind to F8 key
 
 
-
-
 ;; Custom function for zsh-like completion
 (defun my/zsh-like-completion ()
   "Complete like zsh - complete until ambiguity."
@@ -507,11 +508,13 @@ Also handles various cleanup tasks like removing trailing whitespace."
         (completion-cycle-threshold nil))
     (minibuffer-complete)))
 
+
 ;; Global completion settings
 (setq completion-styles '(basic partial-completion)
       completion-category-defaults nil
       completion-category-overrides nil
       completion-ignore-case t)
+
 
 ;; Vertico configuration
 (use-package vertico
@@ -581,8 +584,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;; LaTeX support:
 
 (message "7. LaTeX...")
-
-
 ;; LaTeX configuration for Emacs
 
 ;; Set indentation for LaTeX lists
@@ -593,14 +594,11 @@ Also handles various cleanup tasks like removing trailing whitespace."
 ;; Define the indentation function for list environments
 (defun LaTeX-indent-item ()
   "Provide proper indentation for LaTeX \"itemize\",\"enumerate\", and
-\"description\" environments.
+\"description\" environments. \"\\item\" is indented 'LaTeX-indent-level'
+spaces relative to the beginning of the environment.
 
-  \"\\item\" is indented `LaTeX-indent-level' spaces relative to
-  the the beginning of the environment.
-
-  Continuation lines are indented either twice
-  `LaTeX-indent-level', or `LaTeX-indent-level-item-continuation'
-  if the latter is bound."
+Continuation lines are indented either twice 'LaTeX-indent-level',
+or 'LaTeX-indent-level-item-continuation' if the latter is bound."
   (save-match-data
     (let* ((offset LaTeX-indent-level)
            (contin (or (and (boundp 'LaTeX-indent-level-item-continuation)
@@ -634,42 +632,53 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (use-package tex
   :ensure auctex
   :mode ("\\.tex\\'" . latex-mode)
+  :init
+  (setq-default TeX-engine 'luatex)  ; Set default engine
   :config
   (setq TeX-auto-save t
         TeX-parse-self t
         TeX-master nil
-        TeX-engine 'xetex
+        TeX-engine 'luatex
         ;; Use PDF mode by default
         TeX-PDF-mode t
         ;; Prevent confirmation for cleaning generated files
         TeX-clean-confirm nil
         ;; Add -shell-escape by default for minted package
         LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %S%(PDFout)"))
-        ;; Swedish quotes
+        ;; ;; Swedish quotes
         TeX-quote-language-alist '(("swedish" "\"" "\"" t))
-        TeX-quote-language "swedish")
+        TeX-quote-language "swedish"))
 
-  ;; Set up PDF Tools as the viewer
-  (use-package pdf-tools
-    :ensure t
-    :magic ("%PDF" . pdf-view-mode)
-    :config
-    (pdf-tools-install :no-query)
-    ;; Don't ask to reload when the PDF changes
-    (setq revert-without-query '(".*"))
-    (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
-    (add-hook 'TeX-after-compilation-finished-functions
-              #'TeX-revert-document-buffer))
+
+;; Set up PDF Tools as the viewer
+(use-package pdf-tools
+  :ensure t
+  :magic ("%PDF" . pdf-view-mode)
+  :config
+  (pdf-tools-install :no-query)
+  ;; Don't ask to reload when the PDF changes
+  (setq revert-without-query '(".*"))
+  (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
+  (add-hook 'TeX-after-compilation-finished-functions
+            #'TeX-revert-document-buffer)
 
   ;; Enable useful minor modes
   ;; (add-hook 'LaTeX-mode-hook #'visual-line-mode)
   (add-hook 'LaTeX-mode-hook #'flyspell-mode)
-  (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
   (add-hook 'LaTeX-mode-hook #'reftex-mode)
+  (add-hook 'LaTeX-mode-hook
+            (lambda ()
+              (add-hook 'post-self-insert-hook
+                        (lambda ()
+                          (when (eq last-command-event ?-)
+                            (message "Dash typed: preceding-char is '%c'"
+                                     (char-before (1- (point))))))
+                        nil t)))
 
   ;; Enable minted for code highlighting
   (add-to-list 'LaTeX-verbatim-environments "minted")
   (add-to-list 'LaTeX-verbatim-macros-with-braces "mintinline"))
+
 
 ;; Enhanced reference management
 (use-package reftex
@@ -680,6 +689,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
         ;; Ensure RefTeX finds your bibliography files
         reftex-default-bibliography '("references.bib")))
 
+
 ;; Completion support
 (use-package company-auctex
   :ensure t
@@ -687,16 +697,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :config
   (company-auctex-init))
 
-;; Fast math input
-(use-package cdlatex
-  :ensure t
-  :after tex
-  :hook (LaTeX-mode . turn-on-cdlatex)
-  :config
-  (setq cdlatex-math-symbol-alist
-        '((?= ("\\equiv" "\\approx" "\\cong" "\\simeq"))
-          (?> ("\\Rightarrow" "\\rightarrow" "\\Longrightarrow"))
-          (?< ("\\Leftarrow" "\\leftarrow" "\\Longleftarrow")))))
 
 ;; LSP support through texlab
 (use-package lsp-latex
@@ -715,13 +715,16 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :custom
   (math-preview-command "/usr/local/bin/math-preview"))
 
+
 ;; Keybinding for error navigation (Swedish keyboard friendly)
 (with-eval-after-load 'tex
   (define-key TeX-mode-map (kbd "C-c f") 'TeX-next-error))
 
+
 ;; Optional: Set up structure folding
 (add-hook 'LaTeX-mode-hook 'outline-minor-mode)
 (add-hook 'LaTeX-mode-hook 'TeX-fold-mode)
+
 
 ;; Set up proper list environment indentation
 (with-eval-after-load "latex"
@@ -802,54 +805,20 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :after yasnippet)
 
 
-;; Optional: Company AUCTeX integrates Company with AUCTeX
-(use-package company-auctex
-  :ensure t
-  :after (company auctex)
-  :config (company-auctex-init))
+;; ;; Optional: Company AUCTeX integrates Company with AUCTeX
+;; (use-package company-auctex
+;;   :ensure t
+;;   :after (company auctex)
+;;   :config (company-auctex-init))
 
-;; Global completion settings
-(setq completion-styles '(partial-completion basic)
-      completion-cycle-threshold nil
-      completion-pcm-complete-word-inserts-delimiters t
-      completion-ignore-case t
-      completion-category-defaults nil
-      completion-category-overrides nil)
+;; ;; Global completion settings
+;; (setq completion-styles '(partial-completion basic)
+;;       completion-cycle-threshold nil
+;;       completion-pcm-complete-word-inserts-delimiters t
+;;       completion-ignore-case t
+;;       completion-category-defaults nil
+;;       completion-category-overrides nil)
 
-;; Vertico configuration
-(use-package vertico
-  :ensure t
-  :straight (:files (:defaults "extensions/*"))
-  :init
-  (vertico-mode)
-
-  :bind (:map vertico-map
-              ("C-<backspace>" . vertico-directory-up)
-              ("C-n" . vertico-next)
-              ("C-p" . vertico-previous))
-
-  :custom
-  (vertico-cycle t)
-  (vertico-preselect 'prompt)    ; Start at prompt instead of first candidate
-  (vertico-count 20)             ; Show more candidates
-  (vertico-resize t)             ; Resize mini-window to fit content
-  (vertico-multiform-commands
-   '((consult-line buffer)       ; Different display modes for different commands
-     (consult-imenu buffer)
-     (consult-ripgrep buffer)))
-
-  :config
-  (setq vertico-count-format nil) ; Removes the match counter
-
-  :custom-face
-  (vertico-current ((t (:background "#1d1f21")))))
-
-;; Orderless configuration (optional)
-(use-package orderless
-  :ensure t
-  :custom
-  (completion-styles '(orderless basic))
-  (completion-category-overrides '((file (styles . (partial-completion))))))
 
 ;; Enhances minibuffers:
 (use-package marginalia
@@ -897,9 +866,6 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (add-hook 'python-mode-hook #'my/set-flycheck-python-interpreter)
 
 
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python-section:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -937,23 +903,23 @@ Also handles various cleanup tasks like removing trailing whitespace."
 
 
 ;; Configure eglot to use both pylsp and ruff-lsp
-(use-package eglot
-  :ensure t
-  :hook (python-mode . eglot-ensure)
-  :config
-  ;; (add-to-list 'eglot-server-programs
-  ;; '(python-mode . ("pylsp")))
-  ;; Add ruff-lsp as an additional server
-  (add-to-list 'eglot-server-programs
-               '(python-mode . ("ruff-lsp")))
-  :bind (:map eglot-mode-map
-              ("C-c l a" . eglot-code-actions)
-              ("C-c l r" . eglot-rename)
-              ("C-c l f" . eglot-format)
-              ("C-c l d" . eglot-find-declaration))
-  Customize eglot features
-  (setq eglot-autoshutdown t  ; shutdown language server after closing last file
-        eglot-confirm-server-initiated-edits nil))  ; allow server to edit files
+;; (use-package eglot
+;;   :ensure t
+;;   :hook (python-mode . eglot-ensure)
+;;   :config
+;;   ;; (add-to-list 'eglot-server-programs
+;;   ;; '(python-mode . ("pylsp")))
+;;   ;; Add ruff-lsp as an additional server
+;;   (add-to-list 'eglot-server-programs
+;;                '(python-mode . ("ruff-lsp")))
+;;   :bind (:map eglot-mode-map
+;;               ("C-c l a" . eglot-code-actions)
+;;               ("C-c l r" . eglot-rename)
+;;               ("C-c l f" . eglot-format)
+;;               ("C-c l d" . eglot-find-declaration))
+;;   Customize eglot features
+;;   (setq eglot-autoshutdown t  ; shutdown language server after closing last file
+;;         eglot-confirm-server-initiated-edits nil))  ; allow server to edit files
 
 
 ;; Optional: If you want to run ruff fixes on save
@@ -1044,60 +1010,60 @@ Also handles various cleanup tasks like removing trailing whitespace."
 
 
 ;; Local llms with ellama!
-(message "10. ellama...")
-(use-package ellama
-  :bind ("C-c l" . ellama-transient-main-menu)
-  :init
-  ;; setup key bindings
-  (setopt ellama-keymap-prefix "C-c l")
-  ;; language you want ellama to translate to
-  (setopt ellama-language "English")
-  ;; could be llm-openai for example
-  (require 'llm-ollama)
-  (setopt ellama-provider
-          (make-llm-ollama
-           ;; this model should be pulled to use it
-           ;; value should be the same as you print in terminal during pull
-           :chat-model "llama3.1:8b-instruct-q8_0"
-           :embedding-model "nomic-embed-text"
-           :default-chat-non-standard-params '(("num_ctx" . 8192))))
-  (setopt ellama-summarization-provider
-          (make-llm-ollama
-           :chat-model "qwen2.5-coder:3b"
-           :embedding-model "nomic-embed-text"
-           :default-chat-non-standard-params '(("num_ctx" . 32768))))
-  (setopt ellama-coding-provider
-          (make-llm-ollama
-           :chat-model "qwen2.5-coder:3b"
-           :embedding-model "nomic-embed-text"
-           :default-chat-non-standard-params '(("num_ctx" . 32768))))
-  ;; Predefined llm providers for interactive switching.
-  ;; You shouldn't add ollama providers here - it can be selected interactively
-  ;; without it. It is just example.
-  (setopt ellama-providers
-          '(("llama" . (make-llm-ollama
-                        :chat-model "llama3.1:8b-instruct-q8_0"
-                        :embedding-model "llama3.1:8b-instruct-q8_0"))
-            ("mistral" . (make-llm-ollama
-                          :chat-model "mistral:7b-instruct-v0.2-q6_K"
-                          :embedding-model "mistral:7b-instruct-v0.2-q6_K"))
-            ("mixtral" . (make-llm-ollama
-                          :chat-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"
-                          :embedding-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"))))
-  ;; Naming new sessions with llm
-  (setopt ellama-naming-provider
-          (make-llm-ollama
-           :chat-model "llama3.1:8b-instruct-q8_0"
-           :embedding-model "nomic-embed-text"
-           :default-chat-non-standard-params '(("stop" . ("\n")))))
-  (setopt ellama-naming-scheme 'ellama-generate-name-by-llm)
-  ;; Translation llm provider
-  (setopt ellama-translation-provider
-          (make-llm-ollama
-           :chat-model "qwen2.5-coder:3b"
-           :embedding-model "nomic-embed-text"
-           :default-chat-non-standard-params
-           '(("num_ctx" . 32768)))))
+;; (message "10. ellama...")
+;; (use-package ellama
+;;   :bind ("C-c l" . ellama-transient-main-menu)
+;;   :init
+;;   ;; setup key bindings
+;;   (setopt ellama-keymap-prefix "C-c l")
+;;   ;; language you want ellama to translate to
+;;   (setopt ellama-language "English")
+;;   ;; could be llm-openai for example
+;;   (require 'llm-ollama)
+;;   (setopt ellama-provider
+;;           (make-llm-ollama
+;;            ;; this model should be pulled to use it
+;;            ;; value should be the same as you print in terminal during pull
+;;            :chat-model "llama3.1:8b-instruct-q8_0"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params '(("num_ctx" . 8192))))
+;;   (setopt ellama-summarization-provider
+;;           (make-llm-ollama
+;;            :chat-model "qwen2.5-coder:3b"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params '(("num_ctx" . 32768))))
+;;   (setopt ellama-coding-provider
+;;           (make-llm-ollama
+;;            :chat-model "qwen2.5-coder:3b"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params '(("num_ctx" . 32768))))
+;;   ;; Predefined llm providers for interactive switching.
+;;   ;; You shouldn't add ollama providers here - it can be selected interactively
+;;   ;; without it. It is just example.
+;;   (setopt ellama-providers
+;;           '(("llama" . (make-llm-ollama
+;;                         :chat-model "llama3.1:8b-instruct-q8_0"
+;;                         :embedding-model "llama3.1:8b-instruct-q8_0"))
+;;             ("mistral" . (make-llm-ollama
+;;                           :chat-model "mistral:7b-instruct-v0.2-q6_K"
+;;                           :embedding-model "mistral:7b-instruct-v0.2-q6_K"))
+;;             ("mixtral" . (make-llm-ollama
+;;                           :chat-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"
+;;                           :embedding-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"))))
+;;   ;; Naming new sessions with llm
+;;   (setopt ellama-naming-provider
+;;           (make-llm-ollama
+;;            :chat-model "llama3.1:8b-instruct-q8_0"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params '(("stop" . ("\n")))))
+;;   (setopt ellama-naming-scheme 'ellama-generate-name-by-llm)
+;;   ;; Translation llm provider
+;;   (setopt ellama-translation-provider
+;;           (make-llm-ollama
+;;            :chat-model "qwen2.5-coder:3b"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params
+;;            '(("num_ctx" . 32768)))))
 
 
 ;; magit:
@@ -1169,7 +1135,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
          ("C-'" . avy-goto-char-2)))
 
 
-c;; Multiple cursors for text editing
+;; Multiple cursors for text editing
 (use-package multiple-cursors
   :ensure t
   :bind (("C-c m c" . mc/edit-lines)
@@ -1222,7 +1188,6 @@ c;; Multiple cursors for text editing
 
 (use-package toml-mode
   :ensure t)
-
 
 
 (use-package json-mode
