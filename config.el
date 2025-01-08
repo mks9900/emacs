@@ -965,6 +965,29 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
   :hook ((python-base-mode) . indent-bars-mode))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; C++
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; (message "C++ stuff...")
+(use-package modern-cpp-font-lock
+  :ensure t
+  :config
+  (modern-c++-font-lock-global-mode t))
+
+
+(setq c++-mode-hook
+      '(lambda ()
+         (setq indent-tabs-mode nil)
+         (setq c-basic-offset 4)
+         (c-set-offset 'substatement-open 0)
+         (c-set-offset 'innamespace 0)))
+
+
+(setq compile-command "cmake -B build -G Ninja && cmake --build build")
+
+
+(global-set-key (kbd "C-c C-c") 'compile)
+(global-set-key (kbd "C-c f") 'clang-format-buffer)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Github copilot:
