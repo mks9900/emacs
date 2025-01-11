@@ -347,6 +347,17 @@
 (setq mouse-wheel-progressive-speed nil)
 
 
+;; Scroll speed!
+(use-package ultra-scroll
+  ;:load-path "~/code/emacs/ultra-scroll" ; if you git clone'd instead of package-vc-install
+  :init
+  (setq scroll-conservatively 101 ; important!
+        scroll-margin 0) 
+  :config
+  (ultra-scroll-mode 1))
+
+
+
 ;; Install icons:
 (use-package all-the-icons
   :ensure t)
@@ -974,16 +985,18 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
   :config
   (modern-c++-font-lock-global-mode t))
 
-
-(setq c++-mode-hook
-      '(lambda ()
-         (setq indent-tabs-mode nil)
-         (setq c-basic-offset 4)
-         (c-set-offset 'substatement-open 0)
-         (c-set-offset 'innamespace 0)))
-
-
+(setq-default c-basic-offset 4)
+(setq-default tab-width 4)
+(setq-default indent-tabs-mode nil)
 (setq compile-command "cmake -B build -G Ninja && cmake --build build")
+
+(add-hook 'c++-mode-hook
+          (lambda ()
+            (c-set-style "stroustrup")
+            (c-set-offset 'innamespace 0)
+            (c-toggle-auto-newline 1)
+            (c-toggle-hungry-state 1)
+            (c-set-offset 'substatement-open 0)))
 
 
 (global-set-key (kbd "C-c C-c") 'compile)
