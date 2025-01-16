@@ -114,24 +114,77 @@
                   (region-end)
                 (line-end-position)))
          (line-text (buffer-substring-no-properties start end)))
-    (if (derived-mode-p 'json-mode)
-        ;; For JSON modes, manually handle // comments
-        (save-excursion
-          (goto-char start)
-          (if (string-match-p "^[ \t]*//" line-text)
-              ;; Remove comment
-              (while (re-search-forward "^[ \t]*//" end t)
-                (replace-match "" nil nil))
-            ;; Add comment
-            (while (< (point) end)
-              (unless (looking-at "^[ \t]*//")
-                (beginning-of-line)
-                (insert "// "))
-              (forward-line 1))))
-      ;; For other modes, use standard comment function
-      (comment-or-uncomment-region start end))))
+    (cond
+     ;; JSON mode handling
+     ((derived-mode-p 'json-mode)
+      (save-excursion
+        (goto-char start)
+        (if (string-match-p "^[ \t]*//" line-text)
+            ;; Remove comment
+            (while (re-search-forward "^[ \t]*//" end t)
+              (replace-match "" nil nil))
+          ;; Add comment
+          (while (< (point) end)
+            (unless (looking-at "^[ \t]*//")
+              (beginning-of-line)
+              (insert "// "))
+            (forward-line 1)))))
 
-(global-set-key (kbd "M-1") 'comment-or-uncomment-line-or-region)
+     ;; C++ block comment handling
+     ((and (derived-mode-p 'c++-mode)
+           (region-active-p))  ; Only use block comments for regions
+      (save-excursion
+        (goto-char start)
+        (if (and (string-match-p "^[ \t]*/\\*" line-text)
+                 (string-match-p "\\*/[ \t]*$"
+                                 (buffer-substring-no-properties
+                                  (line-beginning-position)
+                                  end)))
+            ;; Remove block comment
+            (progn
+              (goto-char start)
+              (when (re-search-forward "/\\*" end t)
+                (replace-match "" nil nil))
+              (goto-char start)
+              (when (re-search-forward "\\*/" end t)
+                (replace-match "" nil nil)))
+          ;; Add block comment
+          (goto-char start)
+          (insert "/* ")
+          (goto-char end)
+          (insert " */"))))
+
+     ;; Default handling for other modes
+     (t (comment-or-uncomment-region start end)))))
+
+;; (defun comment-or-uncomment-line-or-region ()
+;;   "Comments or uncomments the current line or region."
+;;   (interactive)
+;;   (let* ((start (if (region-active-p)
+;;                     (region-beginning)
+;;                   (line-beginning-position)))
+;;          (end (if (region-active-p)
+;;                   (region-end)
+;;                 (line-end-position)))
+;;          (line-text (buffer-substring-no-properties start end)))
+;;     (if (derived-mode-p 'json-mode)
+;;         ;; For JSON modes, manually handle // comments
+;;         (save-excursion
+;;           (goto-char start)
+;;           (if (string-match-p "^[ \t]*//" line-text)
+;;               ;; Remove comment
+;;               (while (re-search-forward "^[ \t]*//" end t)
+;;                 (replace-match "" nil nil))
+;;             ;; Add comment
+;;             (while (< (point) end)
+;;               (unless (looking-at "^[ \t]*//")
+;;                 (beginning-of-line)
+;;                 (insert "// "))
+;;               (forward-line 1))))
+;;       ;; For other modes, use standard comment function
+;;       (comment-or-uncomment-region start end))))
+
+;; (global-set-key (kbd "M-1") 'comment-or-uncomment-line-or-region)
 
 
 ;; Create a function to indent buffers:
@@ -981,17 +1034,60 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; (message "C++ stuff...")
 
+;; Define Google C++ style
+(c-add-style "google"
+             '("stroustrup"
+               (c-basic-offset . 2)
+               (c-offsets-alist
+                (access-label . -)
+                (arglist-cont-nonempty . +)
+                (arglist-intro . +)
+                (case-label . 0)
+                (func-decl-cont . +)
+                (inclass . +)
+                (inher-cont . c-lineup-multi-inher)
+                (inline-open . 0)
+                (label . /)
+                (member-init-intro . +)
+                (namespaces . 0)
+                (statement-cont . +)
+                (substatement-open . 0)
+                (template-args-cont . +))))
+
 (use-package clang-format
   :ensure t
   :bind (("C-c f" . clang-format-buffer)
          ("C-c r f" . clang-format-region)))
 
+;; Existing packages
+(use-package clang-format
+  :ensure t
+  :bind (("C-c f" . clang-format-buffer)
+         ("C-c r f" . clang-format-region)))
 
 (use-package modern-cpp-font-lock
   :ensure t
   :config
   (modern-c++-font-lock-global-mode t))
 
+;; Add LSP support
+(use-package lsp-mode
+  :ensure t
+  :commands lsp
+  :hook (c++-mode . lsp)
+  :config
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-enable-on-type-formatting nil)) ; if you prefer clang-format to handle formatting
+
+;; Optional but recommended: Add company for completion
+(use-package company
+  :ensure t
+  :hook (c++-mode . company-mode)
+  :config
+  (setq company-idle-delay 0.1)
+  (setq company-minimum-prefix-length 1))
+
+;; Your existing settings
 (setq-default c-basic-offset 4)
 (setq-default tab-width 4)
 (setq-default indent-tabs-mode nil)
@@ -1005,22 +1101,25 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
             (c-toggle-hungry-state 1)
             (c-set-offset 'substatement-open 0)))
 
-
 (global-set-key (kbd "C-c C-c") 'compile)
-(global-set-key (kbd "C-c f") 'clang-format-buffer)
+;; (global-set-key (kbd "C-c f") 'clang-format-buffer)
+
+;; performance enhancing stuff for LSP:
+(setq gc-cons-threshold 100000000)
+(setq read-process-output-max (* 1024 1024))
 
 
-(defun my-comment-or-uncomment-region ()
-  (interactive)
-  (let ((start (region-beginning))
-        (end (region-end)))
-    (if (eq major-mode 'c++-mode)
-        (save-excursion
-          (goto-char start)
-          (insert "/*")
-          (goto-char (+ end 2))
-          (insert "*/"))
-      (comment-or-uncomment-region start end))))
+;; (defun my-comment-or-uncomment-region ()
+;;   (interactive)
+;;   (let ((start (region-beginning))
+;;         (end (region-end)))
+;;     (if (eq major-mode 'c++-mode)
+;;         (save-excursion
+;;           (goto-char start)
+;;           (insert "/*")
+;;           (goto-char (+ end 2))
+;;           (insert "*/"))
+;;       (comment-or-uncomment-region start end))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Github copilot:
