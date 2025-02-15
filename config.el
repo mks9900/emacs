@@ -129,17 +129,15 @@
               (beginning-of-line)
               (insert "// "))
             (forward-line 1)))))
-
      ;; C++ block comment handling
      ((and (derived-mode-p 'c++-mode)
            (region-active-p))  ; Only use block comments for regions
       (save-excursion
-        (goto-char start)
         (if (and (string-match-p "^[ \t]*/\\*" line-text)
                  (string-match-p "\\*/[ \t]*$"
-                                 (buffer-substring-no-properties
-                                  (line-beginning-position)
-                                  end)))
+                               (buffer-substring-no-properties
+                                (line-beginning-position)
+                                end)))
             ;; Remove block comment
             (progn
               (goto-char start)
@@ -150,13 +148,16 @@
                 (replace-match "" nil nil)))
           ;; Add block comment
           (goto-char start)
-          (insert "/* ")
+          (insert "/*\n")  ; newline after opening
           (goto-char end)
-          (insert " */"))))
-
+          (end-of-line)
+          (insert "\n*/")))))  ; newline before closing
      ;; Default handling for other modes
-     (t (comment-or-uncomment-region start end)))))
+    (t (comment-or-uncomment-region start end))))
 
+;; above doesn't work at all for line commenting!
+
+;; old one below...
 ;; (defun comment-or-uncomment-line-or-region ()
 ;;   "Comments or uncomments the current line or region."
 ;;   (interactive)
@@ -184,7 +185,7 @@
 ;;       ;; For other modes, use standard comment function
 ;;       (comment-or-uncomment-region start end))))
 
-;; (global-set-key (kbd "M-1") 'comment-or-uncomment-line-or-region)
+(global-set-key (kbd "M-1") 'comment-or-uncomment-line-or-region)
 
 
 ;; Create a function to indent buffers:
@@ -512,7 +513,12 @@
   :config
   (which-key-mode)
   (setq which-key-idle-delay 0.5)  ; Adjust the delay as needed
-  ;; Other customization options here
+  ;; Position where the which-key buffer should pop up
+  (setq which-key-popup-type 'side-window)
+  (setq which-key-side-window-location 'bottom)
+
+  ;; Make the which-key popup max 60% of the frame height
+  (setq which-key-side-window-max-height 0.60)
   )
 
 
