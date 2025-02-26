@@ -1,7 +1,8 @@
 ;; package --- Summary
 
 ;;; Commentary:
-;; Optimized Emacs configuration by Johan Thor
+;; I use this config on four computers and so there are some cases to handle
+;; certain cases separately.
 ;; To install programs called for in the below code, install them on Ubuntu
 ;; using the following command:
 ;; $ sudo apt install npm hunspell cargo pandoc
@@ -20,18 +21,16 @@
 ;;; Code:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Performance optimizations
+;; Set repositories to use:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "0. Performance optimizations...")
+(message "0. Loading packages...")
 
-;; Increase garbage collection threshold for faster startup
-(setq gc-cons-threshold (* 50 1000 1000))
-
-;; Set repositories to use
 (setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 
-;; Bootstrap straight
+
+
+;; Bootstrap straight:
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -45,87 +44,64 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-;; Suppress a warning about Emacs complaining about straight not being defined
+;; suppress a warning about Emacs complaining about
+;; straight not being defined:
 (declare-function straight-use-package "ext:straight.el")
 
-;; Integrate `straight' with `use-package'
+;; Integrates `straight' directly into the `use-package' package through the `:straight' expression.
 (straight-use-package 'use-package)
-(setq straight-use-package-by-default t)
 (setq straight-check-for-modifications '(find-when-checking))
 
-;; Better garbage collection strategy using gcmh
-(use-package gcmh
-  :ensure t
-  :demand t
-  :init
-  (setq gcmh-high-cons-threshold (* 100 1000 1000)) ; 100MB
-  (setq gcmh-idle-delay 5)
-  :config
-  (gcmh-mode 1))
 
-;; Optimize garbage collection during minibuffer usage
-(defun my/gc-minibuffer-setup-hook ()
-  "Increase GC threshold when minibuffer is active."
-  (setq gc-cons-threshold most-positive-fixnum))
-
-(defun my/gc-minibuffer-exit-hook ()
-  "Reset GC threshold when minibuffer is inactive."
-  (setq gc-cons-threshold (* 50 1000 1000)))
-
-(add-hook 'minibuffer-setup-hook #'my/gc-minibuffer-setup-hook)
-(add-hook 'minibuffer-exit-hook #'my/gc-minibuffer-exit-hook)
-
-;; Enable native compilation if available (Emacs 28+)
-(when (and (fboundp 'native-comp-available-p)
-           (native-comp-available-p))
-  (setq native-comp-async-report-warnings-errors nil)
-  (setq native-comp-deferred-compilation t)
-  (setq native-comp-async-jobs-number 4) ; Adjust based on your CPU
-  
-  ;; Set up a dedicated native compilation cache directory
-  (when (boundp 'comp-eln-load-path)
-    (let ((eln-cache-dir (expand-file-name "eln-cache/" user-emacs-directory)))
-      (add-to-list 'comp-eln-load-path eln-cache-dir)
-      (setq native-comp-eln-load-path
-            (list (expand-file-name "eln-cache/" user-emacs-directory))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global settings
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "1. Applying global settings...")
-;; Always use utf-8
+;; Always use utf-8:
 (set-charset-priority 'unicode)
 (prefer-coding-system 'utf-8-unix)
 
-;; Set the width of the line numbers to be fixed, depending on the number of lines
+
+;; Set the width of the line numbers to be fixed, depending
+;; on the number of lines.
 (setq display-line-numbers-width-start t)
 
-;; Don't produce backup files
-(setq make-backup-files nil
-      auto-save-default nil
-      create-lockfiles nil)
+;; Don't produce backup-files:
+(setq
+ make-backup-files nil
+ auto-save-default nil
+ create-lockfiles nil)
 
-;; Don't write sensitive info in plain text
+
+;; Don't write sensitive info in plain text:
 (setq auth-sources '("~/.authinfo.gpg")
       auth-source-save-behavior t)
 
-;; Stop Emacs from hiding
+;; Stop Emacs from hiding:
 (unbind-key "C-z") ;; suspend-frame
 
-;; Stop Emacs from throwing up buffers with warnings
+
+;; Stop Emacs from throwing up buffers with warnings:
 (defvar warning-minimum-level)
 (setq warning-minimum-level :emergency)
 
-;; Common keybindings
+
+;; Mark whole buffer:
 (global-set-key (kbd "C-c a") 'mark-whole-buffer)
+
+
+;; Indent region (instead of C-M-\)
 (global-set-key (kbd "C-c i") 'indent-region)
 
-;; Short-cut for editing config.el
+
+;; Short-cut for editing config.el:
 (defun open-init-file ()
   "Open this very file."
   (interactive)
   (find-file "~/.emacs.d/config.el"))
 (bind-key "C-c e" #'open-init-file)
+
 
 ;; Enhanced comment/uncomment function with multi-language support
 (defun comment-or-uncomment-line-or-region ()
@@ -189,12 +165,46 @@ For regions in C-like languages, uses block comments when appropriate."
      ;; Default for all other cases - use the built-in function
      (t (comment-or-uncomment-region start end)))))
 
+;; Optional: bind this function to a key
+;; (global-set-key (kbd "C-/") 'comment-or-uncomment-line-or-region)
+
+;; above doesn't work at all for line commenting!
+
+;; old one below...
+;; (defun comment-or-uncomment-line-or-region ()
+;;   "Comments or uncomments the current line or region."
+;;   (interactive)
+;;   (let* ((start (if (region-active-p)
+;;                     (region-beginning)
+;;                   (line-beginning-position)))
+;;          (end (if (region-active-p)
+;;                   (region-end)
+;;                 (line-end-position)))
+;;          (line-text (buffer-substring-no-properties start end)))
+;;     (if (derived-mode-p 'json-mode)
+;;         ;; For JSON modes, manually handle // comments
+;;         (save-excursion
+;;           (goto-char start)
+;;           (if (string-match-p "^[ \t]*//" line-text)
+;;               ;; Remove comment
+;;               (while (re-search-forward "^[ \t]*//" end t)
+;;                 (replace-match "" nil nil))
+;;             ;; Add comment
+;;             (while (< (point) end)
+;;               (unless (looking-at "^[ \t]*//")
+;;                 (beginning-of-line)
+;;                 (insert "// "))
+;;               (forward-line 1))))
+;;       ;; For other modes, use standard comment function
+;;       (comment-or-uncomment-region start end))))
+
 (global-set-key (kbd "M-1") 'comment-or-uncomment-line-or-region)
 
-;; Create a function to indent buffers
+
+;; Create a function to indent buffers:
 (defun indent-buffer-smart ()
-  "Indent buffer while preserving point and window position.
-Also handles various cleanup tasks like removing trailing whitespace."
+  ;;   "Indent buffer while preserving point and window position.
+  ;; Also handles various cleanup tasks like removing trailing whitespace."
   (interactive)
   ;; Remember window position
   (let ((window-start (window-start)))
@@ -215,10 +225,12 @@ Also handles various cleanup tasks like removing trailing whitespace."
 
 (global-set-key (kbd "M-2") 'indent-buffer-smart)
 
-;; Always show linenumbers in the left margin
+
+
+;; Always show linenumbers in the left margin:
 (global-display-line-numbers-mode 1)
 
-;; Enhanced yank that indents pasted code
+
 (defun pt-yank ()
   "Call yank, then indent the pasted region, as TextMate does."
   (interactive)
@@ -232,6 +244,18 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (bind-key "s-v" #'pt-yank)
 (bind-key "C-Y" #'yank)
 
+
+;; Always center current line:
+;; (use-package centered-cursor-mode
+;;   :ensure t
+;;   :config
+;;   ;; To enable it globally (in all buffers):
+;;   (global-centered-cursor-mode 1)
+;;   ;; Or if you prefer to enable it only in specific modes:
+;;   ;; (add-hook 'text-mode-hook 'centered-cursor-mode)
+;;   )
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OS-specifics:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -241,6 +265,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
 (defvar xdg-bin (getenv "XDG_BIN_HOME"))
 (defvar xdg-cache (getenv "XDG_CACHE_HOME"))
 (defvar xdg-config (getenv "XDG_CONFIG_HOME"))
+
 
 ;; Theme setup function
 (defun my/setup-themes ()
@@ -275,6 +300,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
      ((eq system-type 'gnu/linux)
       (cond
        ((string-equal (system-name) "rocky-ws")
+        (set-frame-size (selected-frame) 100 70)
         (set-frame-size (selected-frame) 120 70)
         (set-frame-position (selected-frame) 850 0)
         (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 160))
@@ -282,14 +308,18 @@ Also handles various cleanup tasks like removing trailing whitespace."
         (add-to-list 'default-frame-alist '(fullscreen . maximized))
         (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 200))
        ((string-equal (system-name) "sodra-ds-test")
+        ;; (set-frame-size (selected-frame) 100 50)
+        ;; (set-frame-position (selected-frame) 10 10)
         (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 180))
        ((string-equal (system-name) "sod-as103403")
         (set-frame-size (selected-frame) 160 90)
         (set-face-attribute 'default nil :font "SauceCodePro NFM" :height 240)))))))
 
+
 ;; Set up hooks
 (add-hook 'after-init-hook #'my/setup-themes)
 (add-hook 'window-setup-hook #'my/setup-system-gui)
+
 
 ;; Set up non-GUI specific settings immediately
 (cond
@@ -299,6 +329,7 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (setq mac-command-modifier 'control
         select-enable-clipboard t)))
 
+
 ;; For daemon mode, also set up GUI settings when creating new frames
 (add-hook 'after-make-frame-functions
           (lambda (frame)
@@ -306,34 +337,27 @@ Also handles various cleanup tasks like removing trailing whitespace."
               (my/setup-themes)
               (my/setup-system-gui))))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Look and feel:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "4. Look and feel...")
 
-;; Common text mode settings
-(defun my/text-mode-setup ()
-  "Common setup for text modes."
-  (visual-line-mode 1)
-  (display-fill-column-indicator-mode 1))
-
-;; Common programming mode settings
-(defun my/prog-mode-setup ()
-  "Common setup for programming modes."
-  (visual-line-mode 1)
-  (display-fill-column-indicator-mode 1)
-  (show-paren-mode 1)
-  (electric-pair-local-mode 1))
-
-;; Apply settings to mode hooks
-(add-hook 'text-mode-hook #'my/text-mode-setup)
-(add-hook 'prog-mode-hook #'my/prog-mode-setup)
-
 ;; For text files: auto-fill for actual line breaks at 88 chars
 (setq-default fill-column 88)
+(add-hook 'text-mode-hook (lambda ()
+                            (visual-line-mode 1)
+                            (display-fill-column-indicator-mode 1)))
+
+;; For programming modes: visual-line-mode for soft wrapping
+(add-hook 'prog-mode-hook (lambda ()
+                            (visual-line-mode 1)
+                            (display-fill-column-indicator-mode 1)))
+
+;; Keep column indicator globally available but let modes enable it
 (setq-default display-fill-column-indicator-column 88)
 
-;; User interface settings
+
 (custom-set-variables
  '(blink-cursor-mode nil)
  '(menu-bar-mode nil)
@@ -342,25 +366,31 @@ Also handles various cleanup tasks like removing trailing whitespace."
  '(tooltip-mode nil)
  '(warning-suppress-types '((use-package))))
 
+
 ;; Customize mode line appearance for active and inactive buffers
 (set-face-attribute 'mode-line nil :foreground "gray50" :background "black" :box '(:line-width 1 :color "gray50"))
 (set-face-attribute 'mode-line-inactive nil :foreground "white" :background "gray20" :box '(:line-width 1 :color "gray20"))
+
 
 ;; Make the window divider line thicker
 (setq window-divider-default-places t
       window-divider-default-bottom-width 2
       window-divider-default-right-width 2)
 
-;; Show filename in title
+
+;; Show filename in title:
 (setq frame-title-format
       (list (format "%s %%S: %%j " (system-name))
             '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
-;; Make commented text stand out better
+
+;; Make commented text stand out better:
 (custom-set-faces
  '(font-lock-comment-face ((t (:foreground "gray60")))))
 
-;; Make a greater difference between active and inactive buffers
+
+;; Make a greater difference between active and inactive buffers:
+(defvar dimmer-delay)
 (use-package dimmer
   :ensure t
   :config
@@ -368,7 +398,9 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (setq dimmer-fraction 0.10)
   (setq dimmer-delay 0.01) ; Adjust the delay in seconds
 
+
   ;; Exclude some buffers from being dimmed
+  ;; (add-to-list 'dimmer-exclusion-regexp-list "^\*helm")
   (add-to-list 'dimmer-exclusion-regexp-list "^\*Minibuf")
 
   ;; Configure and activate dimmer
@@ -376,135 +408,142 @@ Also handles various cleanup tasks like removing trailing whitespace."
   (dimmer-configure-magit)
   (dimmer-mode t))
 
-;; Mouse scroll speed
+
+;; Mouse scroll speed:
 (setq mouse-wheel-scroll-amount '(2 ((shift) . 2) ((control) . nil)))
 (setq mouse-wheel-progressive-speed nil)
 
-;; Scroll speed improvements
+
+;; Scroll speed!
 (use-package ultra-scroll
-  :straight (ultra-scroll :type git :host github :repo "jdtsmith/ultra-scroll")
+                                        ;:load-path "~/code/emacs/ultra-scroll" ; if you git clone'd instead of package-vc-install
   :init
   (setq scroll-conservatively 101 ; important!
         scroll-margin 0)
   :config
   (ultra-scroll-mode 1))
 
-;; Install icons
+
+
+;; Install icons:
 (use-package all-the-icons
-  :defer t)
+  :ensure t)
+
 
 (use-package nerd-icons
-  :defer t)
+  :ensure t
+  ;; :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+  )
 
-;; Add icons to the files
+
+;; add icons to the files:
 (use-package all-the-icons-completion
+  :ensure t
+  :straight t
   :after (marginalia all-the-icons)
   :hook (marginalia-mode . all-the-icons-completion-marginalia-setup))
 
-;; Rainbow delimiters for better code readability
+
 (use-package rainbow-delimiters
+  :straight t
+  :ensure t
   :hook ((prog-mode . rainbow-delimiters-mode)))
 (electric-pair-mode)
 
-;; Delight lets you customize how modes are displayed (or hidden)
+
+;; Delight let's you customise how modes are displayed (or hidden):
 (use-package delight
-  :ensure t)
+  :ensure t
+  :straight t)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Misc settings:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "5. Misc settings...")
 (setq-default
- ad-redefinition-action 'accept                       ; Silence warnings for redefinition
- cursor-in-non-selected-windows t                     ; Hide the cursor in inactive windows
- display-time-default-load-average nil                ; Don't display load average
- help-window-select t                                 ; Focus new help windows when opened
- indent-tabs-mode nil                                 ; Prefer spaces over tabs
- inhibit-startup-screen t                             ; Disable start-up screen
- initial-scratch-message ""                           ; Empty the initial *scratch* buffer
- kill-ring-max 128                                    ; Maximum length of kill ring
- load-prefer-newer t                                  ; Prefer the newest version of a file
- mark-ring-max 128                                    ; Maximum length of mark ring
- read-process-output-max (* 1024 1024)                ; Increase the amount of data reads from the process
- scroll-conservatively most-positive-fixnum           ; Always scroll by one line
- select-enable-clipboard t                            ; Merge system's and Emacs' clipboard
- user-full-name "Johan Thor"                          ; Set the full name of the current user
- vc-follow-symlinks t                                 ; Always follow the symlinks
- fast-but-imprecise-scrolling t                       ; More scrolling performance!
- view-read-only t)                                    ; Always open read-only buffers in view-mode
-(column-number-mode 1)                                ; Show the column number
-(fset 'yes-or-no-p 'y-or-n-p)                         ; Replace yes/no prompts with y/n
-(global-hl-line-mode)                                 ; Highlight current line
-(set-default-coding-systems 'utf-8)                   ; Default to utf-8 encoding
-(show-paren-mode 1)                                   ; Show the parent
+ ad-redefinition-action 'accept                      ; Silence warnings for redefinition
+ cursor-in-non-selected-windows t                    ; Hide the cursor in inactive windows
+ display-time-default-load-average nil               ; Don't display load average
+ help-window-select t                                ; Focus new help windows when opened
+ indent-tabs-mode nil                                ; Prefer spaces over tabs
+ inhibit-startup-screen t                            ; Disable start-up screen
+ initial-scratch-message ""                          ; Empty the initial *scratch* buffer
+ kill-ring-max 128                                   ; Maximum length of kill ring
+ load-prefer-newer t                                 ; Prefer the newest version of a file
+ mark-ring-max 128                                   ; Maximum length of mark ring
+ ;; read-process-output-max (* 1024 1024)            ; Increase the amount of data reads from the process
+ scroll-conservatively most-positive-fixnum          ; Always scroll by one line
+ select-enable-clipboard t                           ; Merge system's and Emacs' clipboard
+ ;; tab-width 4                                      ; Set width for tabs
+ ;; use-package-always-ensure t                      ; Avoid the :ensure keyword for each package
+ user-full-name "Johan Thor"                         ; Set the full name of the current user
+ ;;user-mail-address "terencio.agozzino@gmail.com"   ; Set the email address of the current user
+ vc-follow-symlinks t                                ; Always follow the symlinks
+ fast-but-imprecise-scrolling t                      ; More scrolling performance!
+ view-read-only t)                                   ; Always open read-only buffers in view-mode
+(column-number-mode 1)                               ; Show the column number
+(fset 'yes-or-no-p 'y-or-n-p)                        ; Replace yes/no prompts with y/n
+(global-hl-line-mode)                                ; Hightlight current line
+(set-default-coding-systems 'utf-8)                  ; Default to utf-8 encoding
+(show-paren-mode 1)                                  ; Show the parent
 
-;; For large files, use more efficient methods
-(use-package vlf
-  :defer t
-  :config
-  (require 'vlf-setup))
-
-(defun my/find-file-hook-large-file ()
-  "If a file is over 5MB, use vlf mode to open it."
-  (when (> (buffer-size) (* 5 1024 1024))
-    (progn
-      (setq buffer-read-only t)
-      (buffer-disable-undo)
-      (fundamental-mode)
-      (vlf-mode 1))))
-
-(add-hook 'find-file-hook 'my/find-file-hook-large-file)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Addons and customisations:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "6. Addons and customisations...")
 
-;; Enhanced file finding with consult and ido fallback
-(use-package consult
-  :bind (("C-x C-f" . consult-find-file) ;; Replace default find-file
-         ("C-x b" . consult-buffer)       ;; Replace switch-to-buffer
-         ("C-s" . consult-line))          ;; Search in current buffer
-  :config
-  ;; If consult fails to find file, fall back to ido
-  (defun consult-find-file ()
-    "Use `find-file' enhanced by consult and ido as fallback."
-    (interactive)
-    (call-interactively 'find-file)))
-
-;; Window management
 (global-set-key (kbd "C-x 2") 'split-window-below)
 (global-set-key (kbd "C-x 3") 'split-window-right)
 
-;; Windmove for easier window navigation
+
+;; Windmove:
 (use-package windmove
   :ensure t
+  :straight t
   :bind
-  (("M-j" . windmove-left)
+  (
+   ("M-j" . windmove-left)
    ("M-i" . windmove-up)
    ("M-k" . windmove-down)
    ("M-l" . windmove-right)
    ("C-c M-l" . windmove-delete-left)
    ("C-c M-r" . windmove-delete-right)
    ("C-c M-d" . windmove-delete-down)
-   ("C-c M-u" . windmove-delete-up)))
+   ("C-c M-u" . windmove-delete-up)
+   )
+  )
 
-;; which-key helps you learn and remember keybindings
+
+;; which-key:
 (use-package which-key
   :ensure t
   :config
   (which-key-mode)
-  (setq which-key-idle-delay 0.5)
+  (setq which-key-idle-delay 0.5)  ; Adjust the delay as needed
+  ;; Position where the which-key buffer should pop up
   (setq which-key-popup-type 'side-window)
   (setq which-key-side-window-location 'bottom)
-  (setq which-key-side-window-max-height 0.60))
 
-;; Edit files with sudo
+  ;; Make the which-key popup max 60% of the frame height
+  (setq which-key-side-window-max-height 0.60)
+  )
+
+
+;; Edit files with sudo:
 (use-package sudo-edit
-  :defer t)
+  :ensure t
+  :straight t)
 
-;; ibuffer for better buffer management
+
+;; ibuffer:
 (use-package ibuffer
+  :straight t
   :ensure nil
   :preface
   (defvar protected-buffers '("*scratch*" "*Messages*")
@@ -518,6 +557,31 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :bind ("C-x C-b" . ibuffer)
   :init (my/protected-buffers))
 
+
+;; ;; Spell checking:
+;; (use-package ispell
+;;   :ensure nil ; `ispell` is bundled with Emacs, so we don't need to install it...
+;;   :config
+;;   ;; Set Hunspell as the default spell checker
+;;   (setq ispell-program-name "hunspell")
+;;   ;; Set the default dictionaries
+;;   (setq ispell-dictionary "en_GB,sv_SE"))
+
+
+;; ;; Function to switch dictionaries:
+;; (defun switch-dictionary-between-swedish-and-english ()
+;;   "Switch the current spell-checking dictionary between Swedish and English."
+;;   (interactive)
+;;   (let* ((current (if (bound-and-true-p ispell-local-dictionary)
+;;                       ispell-local-dictionary
+;;                     ispell-dictionary))
+;;          (new (if (string= current "sv_SE") "en_GB" "sv_SE")))
+;;     (ispell-change-dictionary new)
+;;     (message "Switched dictionary to %s" new)))
+
+;; (global-set-key (kbd "<f8>") 'switch-dictionary-between-swedish-and-english) ; Bind to F8 key
+
+
 ;; Custom function for zsh-like completion
 (defun my/zsh-like-completion ()
   "Complete like zsh - complete until ambiguity."
@@ -527,43 +591,27 @@ Also handles various cleanup tasks like removing trailing whitespace."
         (completion-cycle-threshold nil))
     (minibuffer-complete)))
 
-;; Enhanced Tab completion for Vertico
-(defun my/vertico-tab ()
-  "Smart tab in Vertico: complete common prefix or select current candidate."
-  (interactive)
-  (if (= vertico--index -1)
-      ;; No candidate selected - complete common prefix
-      (my/zsh-like-completion)
-    ;; Candidate is selected - accept it
-    (vertico-exit)))
 
 ;; Global completion settings
-(setq completion-styles '(basic partial-completion orderless)
+(setq completion-styles '(basic partial-completion)
       completion-category-defaults nil
-      completion-category-overrides '((file (styles . (basic partial-completion))))
+      completion-category-overrides nil
       completion-ignore-case t)
 
 
-;; Install and configure dired-sidebar for easy file navigation
-(use-package dired-sidebar
-  :ensure t
-  :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
-  :config
-  (setq dired-sidebar-use-term-integration t)
-  (setq dired-sidebar-use-custom-font t))
-
-
-;; Vertico configuration for better completion
+;; Vertico configuration
 (use-package vertico
+  :ensure t
+  :straight (:files (:defaults "extensions/*"))
   :init
   (vertico-mode)
   :bind (:map vertico-map
               ("C-<backspace>" . vertico-directory-up)
               ("C-n" . vertico-next)
               ("C-p" . vertico-previous)
-              ("TAB" . my/zsh-like-completion))
+              ("TAB" . my/zsh-like-completion))  ; Override TAB in Vertico
   :bind (:map minibuffer-local-map
-              ("TAB" . my/zsh-like-completion))
+              ("TAB" . my/zsh-like-completion)) ; Override TAB in minibuffer
   :custom
   (vertico-cycle t)
   (vertico-preselect 'prompt)
@@ -578,7 +626,8 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :custom-face
   (vertico-current ((t (:background "#1d1f21")))))
 
-;; Marginalia adds more information to minibuffer completions
+
+;; Marginalia
 (use-package marginalia
   :ensure t
   :straight t
@@ -591,19 +640,22 @@ Also handles various cleanup tasks like removing trailing whitespace."
   :bind (:map minibuffer-local-map
               ("M-A" . marginalia-cycle)))
 
-;; Orderless provides more flexible matching for completions
+;; Orderless - simplified configuration
 (use-package orderless
+  :ensure t
   :custom
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles . (basic partial-completion))))))
 
-;; Terminal emulation within Emacs
+
 (use-package vterm
-  :defer t
+  :ensure t
   :config
   (setq vterm-max-scrollback 10000)
+  ;; Add the exceptions
   (setq vterm-keymap-exceptions '("C-x" "C-u" "C-g" "C-h" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
                                   "M-i" "M-j" "M-k" "M-l"))
+  ;; Define these keys in vterm's own keymap
   :bind (:map vterm-mode-map
               ("M-i" . windmove-up)
               ("M-j" . windmove-left)
@@ -611,51 +663,11 @@ Also handles various cleanup tasks like removing trailing whitespace."
               ("M-l" . windmove-right))
   :bind (("C-c t" . vterm)))
 
-;; Project management with Projectile
-(use-package projectile
-  :defer t
-  :bind-keymap ("C-c p" . projectile-command-map)
-  :init
-  (setq projectile-completion-system 'vertico)
-  (setq projectile-indexing-method 'alien)
-  (setq projectile-sort-order 'recently-active)
-  :config
-  (projectile-mode 1))
 
-;; Recent files tracking
-(use-package recentf
-  :defer t
-  :init
-  (setq recentf-max-saved-items 100
-        recentf-exclude '("/tmp/" "/ssh:"))
-  :config
-  (recentf-mode 1))
+;; LaTeX support:
 
-;; Save history between sessions
-(use-package savehist
-  :init
-  (setq history-length 1000
-        savehist-additional-variables '(mark-ring
-                                       global-mark-ring
-                                       search-ring
-                                       regexp-search-ring
-                                       extended-command-history))
-  :config
-  (savehist-mode 1))
-
-;; Async operations for better responsiveness
-(use-package async
-  :defer t
-  :init
-  (setq async-bytecomp-allowed-packages '(all))
-  :config
-  (async-bytecomp-package-mode 1)
-  (dired-async-mode 1))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LaTeX support
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (message "7. LaTeX...")
+;; LaTeX configuration for Emacs
 
 ;; Set indentation for LaTeX lists
 (setq LaTeX-indent-level 2)
@@ -702,7 +714,6 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
 
 (use-package tex
   :ensure auctex
-  :defer t
   :mode ("\\.tex\\'" . latex-mode)
   :init
   (setq-default TeX-engine 'luatex)  ; Set default engine
@@ -717,13 +728,14 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
         TeX-clean-confirm nil
         ;; Add -shell-escape by default for minted package
         LaTeX-command-style '(("" "%(PDF)%(latex) -shell-escape %S%(PDFout)"))
-        ;; Swedish quotes
+        ;; ;; Swedish quotes
         TeX-quote-language-alist '(("swedish" "\"" "\"" t))
         TeX-quote-language "swedish"))
 
+
 ;; Set up PDF Tools as the viewer
 (use-package pdf-tools
-  :defer t
+  :ensure t
   :magic ("%PDF" . pdf-view-mode)
   :config
   (pdf-tools-install :no-query)
@@ -734,6 +746,7 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
             #'TeX-revert-document-buffer)
 
   ;; Enable useful minor modes
+  ;; (add-hook 'LaTeX-mode-hook #'visual-line-mode)
   (add-hook 'LaTeX-mode-hook #'flyspell-mode)
   (add-hook 'LaTeX-mode-hook #'reftex-mode)
   (add-hook 'LaTeX-mode-hook
@@ -749,25 +762,28 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
   (add-to-list 'LaTeX-verbatim-environments "minted")
   (add-to-list 'LaTeX-verbatim-macros-with-braces "mintinline"))
 
+
 ;; Enhanced reference management
 (use-package reftex
-  :defer t
+  :ensure t
   :after tex
   :config
   (setq reftex-plug-into-AUCTeX t
         ;; Ensure RefTeX finds your bibliography files
         reftex-default-bibliography '("references.bib")))
 
-;; Completion support for LaTeX
+
+;; Completion support
 (use-package company-auctex
-  :defer t
+  :ensure t
   :after (company tex)
   :config
   (company-auctex-init))
 
+
 ;; LSP support through texlab
 (use-package lsp-latex
-  :defer t
+  :ensure t
   :after tex
   :hook ((LaTeX-mode . lsp)
          (lsp-mode . lsp-enable-which-key-integration))
@@ -777,18 +793,21 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
 
 ;; Preview equations inline
 (use-package math-preview
-  :defer t
+  :ensure t
   :after tex
   :custom
   (math-preview-command "/usr/local/bin/math-preview"))
+
 
 ;; Keybinding for error navigation (Swedish keyboard friendly)
 (with-eval-after-load 'tex
   (define-key TeX-mode-map (kbd "C-c f") 'TeX-next-error))
 
+
 ;; Optional: Set up structure folding
 (add-hook 'LaTeX-mode-hook 'outline-minor-mode)
 (add-hook 'LaTeX-mode-hook 'TeX-fold-mode)
+
 
 ;; Set up proper list environment indentation
 (with-eval-after-load "latex"
@@ -796,13 +815,10 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
   (add-to-list 'LaTeX-indent-environment-list '("enumerate" LaTeX-indent-item))
   (add-to-list 'LaTeX-indent-environment-list '("description" LaTeX-indent-item)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Markdown support
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "8. Markdown support...")
 
+;; Markdown support:
 (use-package markdown-mode
-  :defer t
+  :ensure t
   :commands (markdown-mode gfm-mode)
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
@@ -813,20 +829,23 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
    ((eq system-type 'darwin)
     ;; macOS:
     (setq markdown-command "/usr/local/bin/pandoc"))
+
    ;; Linux-specific configurations
    ((eq system-type 'gnu/linux)
-    (setq markdown-command "/usr/bin/pandoc")))
+    (setq markdown-command "/usr/bin/pandoc"))
+   )
   :hook (markdown-mode . lsp-deferred)
   :config
-  (require 'lsp-marksman))
+  (require 'lsp-marksman)
+  )
 
-(add-hook 'markdown-mode-hook 
-          (lambda ()
-            (display-fill-column-indicator-mode 1)))
+(add-hook 'markdown-mode-hook (lambda ()
+                                ;; (visual-line-mode 1)
+                                (display-fill-column-indicator-mode 1)))
+
 
 (use-package markdown-preview-mode
-  :defer t
-  :after markdown-mode)
+  :ensure t)
 
 (defun markdown-export-pdf ()
   "Export the current Markdown file to PDF using Pandoc."
@@ -842,103 +861,85 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
 
 ;; Markdown code formatting
 (use-package prettier-js
-  :defer t
+  :ensure t
   :hook (markdown-mode . prettier-js-mode))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Code completion and tools
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "9. Code completion and tools...")
 
-;; Unified completion system
+;; Completions
 (use-package company
   :ensure t
-  :defer 1
   :hook (after-init . global-company-mode)
   :config
   (setq company-minimum-prefix-length 1
-        company-idle-delay 0.0
-        company-backends '((company-files
-                           company-keywords
-                           company-capf
-                           company-yasnippet)))
+        company-idle-delay 0.0)
   ;; Make TAB behave less aggressively
   (define-key company-active-map [tab] nil)
   (define-key company-active-map (kbd "TAB") nil))
 
-;; Snippets system
 (use-package yasnippet
-  :defer t
-  :hook ((prog-mode . yas-minor-mode)
-         (text-mode . yas-minor-mode))
+  :ensure t
+  :hook ((python-mode . yas-minor-mode)
+         (prog-mode . yas-minor-mode))
   :config
   (yas-reload-all))
 
 (use-package yasnippet-snippets
-  :defer t
+  :ensure t
   :after yasnippet)
 
-;; Unified LSP configuration
-(use-package lsp-mode
-  :defer t
-  :commands (lsp lsp-deferred)
-  :hook ((python-mode . lsp-deferred)
-         (c++-mode . lsp-deferred)
-         (latex-mode . lsp-deferred)
-         (markdown-mode . lsp-deferred))
-  :init
-  (setq lsp-keymap-prefix "C-c l")
-  :config
-  ;; Performance optimizations
-  (setq lsp-enable-file-watchers nil)
-  (setq lsp-idle-delay 0.500)
-  (setq lsp-log-io nil)
-  (setq lsp-completion-provider :capf)
-  (setq lsp-prefer-flymake nil)
-  (setq read-process-output-max (* 1024 1024))
-  
-  ;; Features
-  (setq lsp-enable-symbol-highlighting t)
-  (setq lsp-enable-indentation nil)
-  (setq lsp-enable-on-type-formatting nil)
-  (setq lsp-signature-auto-activate nil)
-  (setq lsp-signature-render-documentation nil)
-  (setq lsp-eldoc-hook nil)
-  (setq lsp-modeline-code-actions-enable nil)
-  (setq lsp-modeline-diagnostics-enable nil)
-  (setq lsp-headerline-breadcrumb-enable nil)
-  
-  ;; Language-specific settings
-  (lsp-register-custom-settings
-   '(("pyls.plugins.pycodestyle.enabled" t t)
-     ("pyls.plugins.pycodestyle.maxLineLength" 88 t))))
 
-;; LSP UI enhancements
-(use-package lsp-ui
-  :defer t
-  :after lsp-mode
-  :commands lsp-ui-mode
-  :config
-  (setq lsp-ui-doc-enable nil
-        lsp-ui-sideline-enable nil))
+;; ;; Optional: Company AUCTeX integrates Company with AUCTeX
+;; (use-package company-auctex
+;;   :ensure t
+;;   :after (company auctex)
+;;   :config (company-auctex-init))
 
-;; Tree view for LSP
+;; ;; Global completion settings
+;; (setq completion-styles '(partial-completion basic)
+;;       completion-cycle-threshold nil
+;;       completion-pcm-complete-word-inserts-delimiters t
+;;       completion-ignore-case t
+;;       completion-category-defaults nil
+;;       completion-category-overrides nil)
+
+
+;; Enhances minibuffers:
+(use-package marginalia
+  :ensure t
+  :straight t
+  :after vertico
+  :init (marginalia-mode)
+  :bind (:map minibuffer-local-map
+              ("M-A" . marginalia-cycle))  ; Cycle through annotation levels
+  :custom
+  (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+
+
+(use-package all-the-icons :ensure t)
+
 (use-package lsp-treemacs
-  :defer t
+  :ensure t
   :commands lsp-treemacs-errors-list)
 
-;; Use flycheck to check code
+
+;; Use flycheck to check code:
 (use-package flycheck
-  :defer t
+  :straight t
+  :ensure t
+  :init (global-flycheck-mode)
   :hook (after-init . global-flycheck-mode)
+  ;; How can this be set on a per project way?
+  ;; It seems flake8 doesn't support this?
   :config
   (cond
    ((eq system-type 'darwin)
     (setq flycheck-flake8rc "/Users/johanthor/.config/flake8"))
    ((eq system-type 'gnu/linux)
-    (setq flycheck-flake8rc "/home/johanthor/.config/flake8"))))
+    (setq flycheck-flake8rc "/home/johanthor/.config/flake8"))
+   )
+  )
 
-;; Helper function to set Python interpreter
+;; tip to automatically set the correct interpreter:
 (defun my/set-flycheck-python-interpreter ()
   "Set Flycheck Python interpreter to the one specified by pyenv."
   (let ((pyenv-path (executable-find "python")))
@@ -947,17 +948,32 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
 
 (add-hook 'python-mode-hook #'my/set-flycheck-python-interpreter)
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python-section:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "10. Python-specifics...")
+(message "9. Python-specifics...")
 
 ;; Basic Python settings
 (setq python-indent-offset 4)
 
+;; Yasnippet setup
+(use-package yasnippet
+  :ensure t
+  :hook ((python-mode . yas-minor-mode)
+         (prog-mode . yas-minor-mode))
+  :config
+  (yas-reload-all))
+
+;; Add the official snippet collection
+(use-package yasnippet-snippets
+  :ensure t
+  :after yasnippet)
+
+
 ;; Pyenv configuration
 (use-package pyenv-mode
-  :defer t
+  :ensure t
   :init
   (add-to-list 'exec-path "~/.pyenv/shims")
   :config
@@ -968,14 +984,49 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
   :hook (python-mode . pyenv-mode)
   :bind ("C-c C-s" . pyenv-mode-set))
 
-;; Ruff for Python linting
+
+;; Configure eglot to use both pylsp and ruff-lsp
+;; (use-package eglot
+;;   :ensure t
+;;   :hook (python-mode . eglot-ensure)
+;;   :config
+;;   ;; (add-to-list 'eglot-server-programs
+;;   ;; '(python-mode . ("pylsp")))
+;;   ;; Add ruff-lsp as an additional server
+;;   (add-to-list 'eglot-server-programs
+;;                '(python-mode . ("ruff-lsp")))
+;;   :bind (:map eglot-mode-map
+;;               ("C-c l a" . eglot-code-actions)
+;;               ("C-c l r" . eglot-rename)
+;;               ("C-c l f" . eglot-format)
+;;               ("C-c l d" . eglot-find-declaration))
+;;   Customize eglot features
+;;   (setq eglot-autoshutdown t  ; shutdown language server after closing last file
+;;         eglot-confirm-server-initiated-edits nil))  ; allow server to edit files
+
+
+;; Optional: If you want to run ruff fixes on save
 (use-package flymake-ruff
-  :defer t
+  :ensure t
   :hook (python-mode . flymake-ruff-load))
+
+
+;; Company for completion
+(use-package company
+  :ensure t
+  :hook (after-init . global-company-mode)
+  :config
+  (setq company-minimum-prefix-length 1
+        company-idle-delay 0.0
+        company-backends '((company-files          ; Enable filename completion
+                            company-keywords         ; Complete programming language keywords
+                            company-capf            ; Completion-at-point functions
+                            company-yasnippet))))   ; Snippet completion
+
+
 
 ;; Indentation guides
 (use-package indent-bars
-  :defer t
   :straight (indent-bars :type git :host github :repo "jdtsmith/indent-bars")
   :custom
   (indent-bars-treesit-support t)
@@ -996,10 +1047,11 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
    indent-bars-highlight-current-depth '(:blend 0.5))
   :hook ((python-base-mode) . indent-bars-mode))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C++
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "11. C++ configuration...")
+;; (message "C++ stuff...")
 
 ;; Define Google C++ style
 (c-add-style "google"
@@ -1021,18 +1073,40 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
                 (substatement-open . 0)
                 (template-args-cont . +))))
 
-;; Clang formatting
 (use-package clang-format
-  :defer t
+  :ensure t
   :bind (("C-c f" . clang-format-buffer)
          ("C-c r f" . clang-format-region)))
 
-;; Modern C++ syntax highlighting
-(use-package modern-cpp-font-lock
-  :defer t
-  :hook (c++-mode . modern-c++-font-lock-mode))
+;; Existing packages
+(use-package clang-format
+  :ensure t
+  :bind (("C-c f" . clang-format-buffer)
+         ("C-c r f" . clang-format-region)))
 
-;; Basic C++ mode settings
+(use-package modern-cpp-font-lock
+  :ensure t
+  :config
+  (modern-c++-font-lock-global-mode t))
+
+;; Add LSP support
+(use-package lsp-mode
+  :ensure t
+  :commands lsp
+  :hook (c++-mode . lsp)
+  :config
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-enable-on-type-formatting nil)) ; if you prefer clang-format to handle formatting
+
+;; Optional but recommended: Add company for completion
+(use-package company
+  :ensure t
+  :hook (c++-mode . company-mode)
+  :config
+  (setq company-idle-delay 0.1)
+  (setq company-minimum-prefix-length 1))
+
+;; Your existing settings
 (setq-default c-basic-offset 4)
 (setq-default tab-width 4)
 (setq-default indent-tabs-mode nil)
@@ -1047,15 +1121,132 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
             (c-set-offset 'substatement-open 0)))
 
 (global-set-key (kbd "C-c C-c") 'compile)
+;; (global-set-key (kbd "C-c f") 'clang-format-buffer)
+
+;; performance enhancing stuff for LSP:
+(setq gc-cons-threshold 100000000)
+(setq read-process-output-max (* 1024 1024))
+
+
+;; (defun my-comment-or-uncomment-region ()
+;;   (interactive)
+;;   (let ((start (region-beginning))
+;;         (end (region-end)))
+;;     (if (eq major-mode 'c++-mode)
+;;         (save-excursion
+;;           (goto-char start)
+;;           (insert "/*")
+;;           (goto-char (+ end 2))
+;;           (insert "*/"))
+;;       (comment-or-uncomment-region start end))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Version Control
+;; Github copilot:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "12. Version Control...")
+;; (message "Copilot...")
 
-;; Magit for Git integration
+;; ;; On WSL2, we don't have the right node-version available and therefore
+;; ;; we have to skip copilot-installation:
+;; (if (not (string-equal (system-name) "SOD-AS104301") or (string-equal (system-name) "sod-as103403"))
+;;     (use-package copilot
+;;       :ensure t
+;;       :straight (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
+;;       :hook ((python-mode . copilot-mode)
+;;              (markdown-mode . copilot-mode)
+;;              (emacs-lisp-mode . copilot-mode)
+;;              (latex-mode . copilot-mode))
+;;       :config
+;;       (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+;;       (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
+;;       (define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion-by-word)
+;;       (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-line))
+
+;;   ;; Fix warnings about assignment to free variables:
+;;   (defvar ac-disable-inline)
+;;   (defvar ac-candidate-menu-min)
+
+;;   ;; complete by copilot first, then auto-complete:
+;;   (defun my-tab ()
+;;     "Complete by copilot first, then auto-complete."
+;;     (interactive)
+;;     (or (copilot-accept-completion-by-word)
+;;         (ac-expand nil)))
+
+;;   (with-eval-after-load 'auto-complete
+;;                                         ; disable inline preview
+;;     (setq ac-disable-inline t)
+;;                                         ; show menu if have only one candidate
+;;     (setq ac-candidate-menu-min 0))
+
+;;   (with-eval-after-load 'company
+;;     ;; disable inline previews
+;;     (delq 'company-preview-if-just-one-frontend company-frontends)))
+
+
+;; Local llms with ellama!
+;; (message "10. ellama...")
+;; (use-package ellama
+;;   :bind ("C-c l" . ellama-transient-main-menu)
+;;   :init
+;;   ;; setup key bindings
+;;   (setopt ellama-keymap-prefix "C-c l")
+;;   ;; language you want ellama to translate to
+;;   (setopt ellama-language "English")
+;;   ;; could be llm-openai for example
+;;   (require 'llm-ollama)
+;;   (setopt ellama-provider
+;;           (make-llm-ollama
+;;            ;; this model should be pulled to use it
+;;            ;; value should be the same as you print in terminal during pull
+;;            :chat-model "llama3.1:8b-instruct-q8_0"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params '(("num_ctx" . 8192))))
+;;   (setopt ellama-summarization-provider
+;;           (make-llm-ollama
+;;            :chat-model "qwen2.5-coder:3b"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params '(("num_ctx" . 32768))))
+;;   (setopt ellama-coding-provider
+;;           (make-llm-ollama
+;;            :chat-model "qwen2.5-coder:3b"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params '(("num_ctx" . 32768))))
+;;   ;; Predefined llm providers for interactive switching.
+;;   ;; You shouldn't add ollama providers here - it can be selected interactively
+;;   ;; without it. It is just example.
+;;   (setopt ellama-providers
+;;           '(("llama" . (make-llm-ollama
+;;                         :chat-model "llama3.1:8b-instruct-q8_0"
+;;                         :embedding-model "llama3.1:8b-instruct-q8_0"))
+;;             ("mistral" . (make-llm-ollama
+;;                           :chat-model "mistral:7b-instruct-v0.2-q6_K"
+;;                           :embedding-model "mistral:7b-instruct-v0.2-q6_K"))
+;;             ("mixtral" . (make-llm-ollama
+;;                           :chat-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"
+;;                           :embedding-model "mixtral:8x7b-instruct-v0.1-q3_K_M-4k"))))
+;;   ;; Naming new sessions with llm
+;;   (setopt ellama-naming-provider
+;;           (make-llm-ollama
+;;            :chat-model "llama3.1:8b-instruct-q8_0"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params '(("stop" . ("\n")))))
+;;   (setopt ellama-naming-scheme 'ellama-generate-name-by-llm)
+;;   ;; Translation llm provider
+;;   (setopt ellama-translation-provider
+;;           (make-llm-ollama
+;;            :chat-model "qwen2.5-coder:3b"
+;;            :embedding-model "nomic-embed-text"
+;;            :default-chat-non-standard-params
+;;            '(("num_ctx" . 32768)))))
+
+
+;; magit:
+(message "11. Magit...")
 (use-package magit
-  :defer t
+  :ensure t
+  :straight t
+  :diminish magit-auto-revert-mode
+  :diminish auto-revert-mode
   :bind (("C-c g" . #'magit-status))
   :custom
   (magit-repository-directories '(("~/code" . 1)))
@@ -1063,62 +1254,119 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
   (add-to-list 'magit-no-confirm 'stage-all-changes))
 
 (use-package magit-filenotify
-  :defer t
+  :ensure t
+  :straight t
   :commands (magit-filenotify-mode)
   :hook (magit-status-mode . magit-filenotify-mode))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; File type modes
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(message "13. File type modes...")
 
-;; Text mode enhancements
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Different modes for different cases:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(message "12. Different modes...")
+
+;; Text mode settings
+(add-hook 'text-mode-hook
+          (lambda ()
+            ;; Basic formatting
+            ;; (auto-fill-mode 1)                          ; Auto wrap at fill-column
+            (display-fill-column-indicator-mode 1)      ; Show the fill column
+            (display-line-numbers-mode 1)               ; Show line numbers
+
+            ;; Spelling
+            (flyspell-mode 1)                          ; Enable spell checking
+
+            ;; Sentences
+            (setq-local sentence-end-double-space nil) ; Don't require double space after periods
+
+            ;; Paragraphs
+            (setq-local paragraph-start "\f\\|[ \t]*$\\|[ \t]*[-+*] ")  ; Better paragraph detection
+            (setq-local paragraph-separate "[ \t\f]*$")
+
+            ;; Navigation and editing
+            (show-paren-mode 1)                        ; Highlight matching parentheses
+            (electric-pair-local-mode 1)               ; Auto-close parentheses, quotes, etc.
+
+            ;; Word wrap settings
+            (setq-local word-wrap t)                   ; Wrap at word boundaries
+            (setq-local truncate-lines nil)            ; Enable line wrapping
+
+            ;; Indentation
+            (setq-local tab-width 4)                   ; Set tab width
+            (setq-local indent-tabs-mode nil)))        ; Use spaces instead of tabs
+
+
+;; Better word count
 (use-package wc-mode
-  :defer t
+  :ensure t
   :hook (text-mode . wc-mode))
+
 
 ;; Enhanced text navigation
 (use-package avy
-  :defer t
+  :ensure t
   :bind (("C-:" . avy-goto-char)
          ("C-'" . avy-goto-char-2)))
 
+
 ;; Multiple cursors for text editing
 (use-package multiple-cursors
-  :defer t
+  :ensure t
   :bind (("C-c m c" . mc/edit-lines)
          ("C->" . mc/mark-next-like-this)
          ("C-<" . mc/mark-previous-like-this)))
 
-;; Shell script mode
+
+;; Define command to format the whole buffer
+(defun format-text-buffer ()
+  "Format all paragraphs in the current buffer to respect fill-column."
+  (interactive)
+  (save-excursion
+    (mark-whole-buffer)
+    (fill-region (region-beginning) (region-end)))
+  (message "Buffer formatted to %d columns" fill-column))
+
+;; Bind it to a key if you want
+(global-set-key (kbd "C-c q") 'format-text-buffer)
+
+
 (use-package sh-script
-  :defer t
+  :ensure t
+  :straight t
   :delight "δ"
   :hook (after-save . executable-make-buffer-file-executable-if-script-p))
 
-;; CSV mode
+;; ;; Enable company mode in shell scripts
+;; (defun my-shell-script-mode-setup ()
+
+;;   (Company-Mode 1)) ; Enable Company-Mode
+
+;; (Add-Hook 'Sh-Mode-Hook #'My-shell-script-mode-setup)
+
+
 (use-package csv-mode
-  :defer t
+  :ensure t
   :mode ("\\.\\(csv\\|tsv\\)\\'"))
 (add-hook 'csv-mode-hook (lambda () (flyspell-mode -1)))
 
-;; Dockerfile mode
+
 (use-package dockerfile-mode
-  :defer t
+  :ensure t
   :delight "δ"
   :mode "Dockerfile\\'")
 
-;; YAML mode
+
 (use-package yaml-mode
-  :defer t)
+  :ensure t)
 
-;; TOML mode
+
 (use-package toml-mode
-  :defer t)
+  :ensure t)
 
-;; JSON mode with improvements
+
 (use-package json-mode
-  :defer t
+  :straight t
+  :ensure t
   :delight "J"
   :mode (("\\.json\\'" . my-json-mode)
          ("\\.jsonc\\'" . my-jsonc-mode)
@@ -1180,12 +1428,14 @@ or 'LaTeX-indent-level-item-continuation' if the latter is bound."
   (define-key json-mode-map (kbd "C-c C-t") 'my/toggle-json-format-on-save)
   (define-key json-mode-map (kbd "C-c C-f") 'json-pretty-print-buffer))
 
+
 (use-package json-navigator
-  :defer t
+  :straight t
   :after json-mode)
 
+
 (use-package prettier
-  :defer t
+  :straight t
   :hook ((json-mode . prettier-mode)
          (my-jsonc-mode . prettier-mode)))
 
